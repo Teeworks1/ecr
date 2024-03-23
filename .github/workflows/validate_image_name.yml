@@ -45,5 +45,5 @@ jobs:
               echo "Values*.yaml files found:"
               echo "$values_files"
           else
-              echo "No values*.yaml files found."
+              echo "No values*.yaml files found here."
           fi

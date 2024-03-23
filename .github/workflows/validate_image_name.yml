@@ -64,14 +64,11 @@ jobs:
               done < "$file"
           done
       
-            - name: List ECR Repositories
+      - name: List ECR Repositories
         id: list-ecr-repos
         run: |
-          echo "Listing ECR repositories..." 
-          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json > ecr_repositories.json
-
-      - name: Save ECR Repositories to Environment File
-        run: echo "ECR_REPOSITORIES=$(cat ecr_repositories.json | base64 -w0)" >> $GITHUB_ENV
+          echo "Listing ECR repositories..."
+          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | base64)"
      
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
@@ -81,8 +78,8 @@ jobs:
           image=${{ steps.identify-values-files.outputs.image }}
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
 
-          # Retrieve ECR repositories list from environment variable
-          ecr_repositories=$(echo "$ECR_REPOSITORIES" | base64 -d)
+          # Retrieve ECR repositories list
+          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
 
           # Check if override tag exists in ECR repositories
           if [[ -n "$overrides" ]]; then

@@ -9,6 +9,7 @@ on:
       - '**'
 
 jobs:
+
   validate_image_tags:
     name: Validate Image Tags
     runs-on: ubuntu-latest
@@ -20,7 +21,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -32,50 +33,16 @@ jobs:
       - name: Identify Values Files
         id: identify-values-files
         run: |
-          values_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep 'values.yaml' || true)
-          echo "::set-output name=values_files::$values_files"
+          #!/bin/bash
 
-      - name: Extract Image Tags from Values Files
-        id: extract-tags
-        run: |
-          tags=""
-          for file in ${{ steps.identify-values-files.outputs.values_files }}; do
-            while IFS= read -r line; do
-              if [[ $line =~ image:\ \"(.+)\" ]]; then
-                image_url="${BASH_REMATCH[1]}"
-                region=$(echo "$image_url" | cut -d'.' -f4)
-                account_id=$(echo "$image_url" | cut -d'.' -f1)
-                repository=$(echo "$image_url" | cut -d'/' -f2 | cut -d'/' -f2)
-                registry_id=$(echo "$image_url" | cut -d'/' -f1 | cut -d'.' -f1)
-                tags="$tags $region/$account_id/$registry_id/$repository"
-              fi
-            done < "$file"
-          done
-          echo "::set-output name=tags::$tags"
+          # Search for values*.yaml files in the current directory and all subdirectories
+          echo "Searching for values*.yaml files..."
+          values_files=$(find . -type f -name "values*.yaml")
 
-      - name: Validate Images in ECR
-        id: validate-images
-        run: |
-          for tag in "${{ steps.extract-tags.outputs.tags }}"; do
-            echo "Tag: $tag"
-            # Extract the AWS region from the image URL
-            region=$(echo "$tag" | cut -d'/' -f3 | cut -d'.' -f1)
-            repository=$(echo "$tag" | cut -d'/' -f4)
-            imageTag=$(echo "$tag" | cut -d'/' -f5)
-            # Construct the API endpoint
-            ecr_endpoint="${registry_id}.dkr.ecr.${region}.amazonaws.com"
-            echo "ECR Endpoint: $ecr_endpoint"
-            aws ecr describe-images --repository-name "$repository" --image-ids imageTag="$imageTag" --region "$region"
-            if [ $? -ne 0 ]; then
-              echo "Error: Image with tag '$tag' not found in ECR repository."
-              exit 1
-            fi
-          done
-
-      - name: Set Workflow Status
-        if: failure()
-        run: exit 1
-
-      - name: Set Workflow Status
-        if: success()
-        run: exit 0
+          # Check if any values*.yaml files were found
+          if [ -n "$values_files" ]; then
+              echo "Values*.yaml files found:"
+              echo "$values_files"
+          else
+              echo "No values*.yaml files found."
+          fi

@@ -47,3 +47,15 @@ jobs:
           else
               echo "No values*.yaml files found here."
           fi
+
+      - name: Find Latest Tag and Image String
+        id: find-latest-tag
+        run: |
+          for file in "${{ steps.identify-values-files.outputs.values_files }}"; do
+            latest_tag=$(grep -oE 'latestTag: (.*)' "$file" | awk '{print $2}')
+            image_string=$(grep -oE 'image: "(.*)" # Replace this regex with your specific pattern' "$file" | cut -d'"' -f2)
+            echo "Latest Tag: $latest_tag"
+            echo "Image String: $image_string"
+            echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
+            echo "IMAGE_STRING=$image_string" >> $GITHUB_ENV
+          done

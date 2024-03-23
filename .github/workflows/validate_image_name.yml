@@ -1,3 +1,4 @@
+---
 name: ECR Image Tag Validation
 
 on:
@@ -30,26 +31,31 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Identify Values Files
-        id: identify-values-files
+      - name: Identify Modified Values Files
+        id: identify-modified-values-files
         run: |
           #!/bin/bash
 
-          # Search for values*.yaml files in the current directory and all subdirectories
-          echo "Searching for values*.yaml files..."
-          values_files=$(find . -type f -name "values*.yaml")
+          # Check if any values*.yaml files were modified
+          modified_values_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep 'values.*\.yaml' || true)
 
-          # Check if any values*.yaml files were found
-          if [ -n "$values_files" ]; then
-              echo "Values*.yaml files found:"
-              echo "$values_files"
+          # Check if any values*.yaml files were modified
+          if [ -n "$modified_values_files" ]; then
+              echo "Modified values*.yaml files found:"
+              echo "$modified_values_files"
+              echo "::set-output name=modified_values_files::$modified_values_files"
           else
-              echo "No values*.yaml files found."
+              echo "No modified values*.yaml files found."
               exit 1
           fi
 
-          # Extract image and latestTag fields from values*.yaml files
-          for file in $values_files; do
+      - name: Extract Image and LatestTag from Modified Values Files
+        id: extract-image-latestTag
+        if: steps.identify-modified-values-files.outputs.modified_values_files != ''
+        run: |
+          # Extract image and latestTag fields from modified values*.yaml files
+          modified_files="${{ steps.identify-modified-values-files.outputs.modified_values_files }}"
+          for file in $modified_files; do
               echo "Processing $file..."
               while IFS= read -r line; do
                   # Extract image value

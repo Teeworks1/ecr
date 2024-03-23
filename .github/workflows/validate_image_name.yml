@@ -118,6 +118,6 @@ jobs:
       fi
     fi
 
-      - name: Set Workflow Status
-        if: ${{ steps.identify-values-files.outputs.values_files != '' }}
-        run: exit 0
+  - name: Set Workflow Status
+    if: ${{ steps.identify-values-files.outputs.values_files != '' }}
+    run: exit 0

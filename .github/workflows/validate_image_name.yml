@@ -1,30 +1,65 @@
----
 name: IMAGE NAME VALIDATION
 
 on:
-   push:
-     branches:  [ main ]
-     
-   pull_request:
-     branches:  [ main ]
+  push:
+    branches: [main]
+    paths:
+      - '*/values*.yaml'
+            
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/values*.yaml'
 
 jobs:
-
   build-and-push:
     name: Build and Push
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
     
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2 
+
+      - name: Extract Image Tags from values files
+        id: extract-tags
+        run: |
+          tags=""
+          for file in $(find . -name 'values*.yaml'); do
+            tag=$(grep 'image:' "$file" | awk '{print $2}')
+            if [ -n "$tag" ]; then
+              tags="$tags $tag"
+            fi
+          done
+          echo "::set-output name=tags::$tags"
+
+      - name: Validate Images in ECR
+        id: validate-images
+        run: |
+          for tag in "${{ steps.extract-tags.outputs.tags }}"; do
+            image_info=$(aws ecr describe-images --image-ids imageDigest=$(aws ecr list-images --repository-name <YOUR_REPOSITORY_NAME> --query 'imageIds[*].[imageDigest]' --output text) --region <YOUR_REGION>)
+            if [ -z "$image_info" ]; then
+              echo "Error: Image with tag '$tag' not found in ECR repository."
+              exit 1
+            else
+              echo "Image with tag '$tag' found in ECR repository."
+            fi
+          done
+
+      - name: Set Workflow Status
+        if: failure()
+        run: exit 1
+
+      - name: Set Workflow Status
+        if: success()
+        run: exit 0

@@ -11,7 +11,7 @@ ws-service:
     SOME_ENVIRONMENT_VARIABLE: "FOO"
   deployments:
     - name: "some-service" 
-      image: "526316940316.dkr.ecr.us-east-1.amazonaws.com/wealthsimple/financial-metrics-service"
+      image: 526316940316.dkr.ecr.us-east-1.amazonaws.com/wealthsimple/financial-metrics-service
       command: [ "java" ]
       args:
         - "-jar"
@@ -20,7 +20,7 @@ ws-service:
       healthCheckUri: "/health"
       ingress: "private"
     - name: "api" # financial-metrics-service gets automatically prepended
-      image: "123456789012.dkr.ecr.us-east-1.amazonaws.com/wealthsimple/financial-metrics-service-api"
+      image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/wealthsimple/financial-metrics-service-api
       command: [ "java" ]
       args:
         - "-jar"

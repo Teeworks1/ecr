@@ -4,10 +4,10 @@ name: ECR Image Tag Validation
 on:
   pull_request:
     paths:
-      branches: [main]
+      - '**'
   push:
     paths:
-      branches: [main]
+      - '**'
 
 jobs:
 

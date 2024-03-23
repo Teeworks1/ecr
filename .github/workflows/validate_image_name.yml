@@ -71,7 +71,6 @@ jobs:
         run: |
           echo "Listing ECR repositories..."
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table
-          echo "::set-env name=ECR_REPOSITORIES::$repositories"
 
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}

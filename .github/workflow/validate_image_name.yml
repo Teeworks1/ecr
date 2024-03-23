@@ -3,15 +3,9 @@ name: IMAGE NAME VALIDATION
 
 on:
    push:
-     branches:  [ * ]
-       #- '*'
-       #- '*/*'
-       #- '**'
+   branches:  [ * ]
    pull_request:
-     branches:  [ * ]
-       #- '*'
-       #- '*/*'
-       #- '**'
+     branches:  [ * ]      
 jobs:
   build-and-push:
     name: Build and Push

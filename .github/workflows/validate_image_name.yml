@@ -9,6 +9,7 @@ on:
       - '**'
 
 jobs:
+
   validate_image_tags:
     name: Validate Image Tags
     runs-on: ubuntu-latest
@@ -58,13 +59,13 @@ jobs:
         run: |
           for tag in "${{ steps.extract-tags.outputs.tags }}"; do
             echo "Tag: $tag"
-            region=$(echo "$tag" | cut -d'/' -f1)
+            # Extract the AWS region from the image URL
+            region=$(echo "$tag" | cut -d'/' -f3 | cut -d'.' -f1)
             repository=$(echo "$tag" | cut -d'/' -f4)
             imageTag=$(echo "$tag" | cut -d'/' -f5)
             echo "Region: $region"
             echo "Repository: $repository"
             echo "Image Tag: $imageTag"
-            echo "AWS CLI Region: $AWS_REGION"  # Add this line for debugging
             aws ecr describe-images --repository-name "$repository" --image-ids imageTag="$imageTag" --region "$region"
             if [ $? -ne 0 ]; then
               echo "Error: Image with tag '$tag' not found in ECR repository."

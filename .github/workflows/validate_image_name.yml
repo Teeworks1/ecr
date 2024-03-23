@@ -64,12 +64,11 @@ jobs:
               done < "$file"
           done
       
-      - name: List ECR Repositories
-        id: list-ecr-repos
-        run: |
+       - name: List ECR Repositories
+         run: |
           echo "Listing ECR repositories..."
-          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | base64)"
-     
+          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table
+
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |

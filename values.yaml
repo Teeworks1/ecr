@@ -1,5 +1,5 @@
 env:
-  replicas: 2
+  replicas: 3
 
 spec:
   containers:

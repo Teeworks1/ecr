@@ -9,7 +9,6 @@ on:
       - '**'
 
 jobs:
-
   validate_image_tags:
     name: Validate Image Tags
     runs-on: ubuntu-latest
@@ -63,9 +62,9 @@ jobs:
             region=$(echo "$tag" | cut -d'/' -f3 | cut -d'.' -f1)
             repository=$(echo "$tag" | cut -d'/' -f4)
             imageTag=$(echo "$tag" | cut -d'/' -f5)
-            echo "Region: $region"
-            echo "Repository: $repository"
-            echo "Image Tag: $imageTag"
+            # Construct the API endpoint
+            ecr_endpoint="${account_id}.dkr.ecr.${region}.amazonaws.com"
+            echo "ECR Endpoint: $ecr_endpoint"
             aws ecr describe-images --repository-name "$repository" --image-ids imageTag="$imageTag" --region "$region"
             if [ $? -ne 0 ]; then
               echo "Error: Image with tag '$tag' not found in ECR repository."

@@ -31,6 +31,7 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+     
       - name: Identify Values Files
         id: identify-values-files
         run: |
@@ -53,10 +54,18 @@ jobs:
           for file in $values_files; do
               echo "Processing $file..."
               while IFS= read -r line; do
+                  # Check if overrides exist
+                  if [[ $line =~ overrides:\ (.+) ]]; then
+                      overrides="${BASH_REMATCH[1]}"
+                      echo "Overrides: $overrides"
+                      # Add logic to validate overrides against ECR if needed
+                      continue
+                  fi
                   # Extract image value
                   if [[ $line =~ image:\ (.+) ]]; then
                       image="${BASH_REMATCH[1]}"
                       echo "Image: $image"
+                      # Add logic to validate image against ECR if needed
                   fi
                   # Extract latestTag value
                   if [[ $line =~ latestTag:\ (.+) ]]; then

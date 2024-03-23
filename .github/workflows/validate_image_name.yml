@@ -1,10 +1,11 @@
+---
 name: ECR Image Tag Validation
 
 on:
   pull_request:
     paths:
       - '**'
-      
+
 jobs:
 
   validate_image_tags:

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-demo
+  namespace: githubaction
+spec:
+  replicas: {{.Values.env.replicas}}
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: back-end
+        imagePullPolicy: Always
+        image: {{.Values.spec.containers.image}}
+        ports:
+        - containerPort: 80
+          name: http-web-svc
+      imagePullSecrets:
+        - name: regcred
+        
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: githubaction
+spec:
+  selector:
+    app.kubernetes.io/name: proxy
+  ports:
+  - name: name-of-service-port
+    protocol: TCP
+    port: 80
+    targetPort: http-web-svc

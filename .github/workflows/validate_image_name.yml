@@ -64,7 +64,7 @@ jobs:
               done < "$file"
           done
       
-      - name: List ECR Repositories
+            - name: List ECR Repositories
         id: list-ecr-repos
         run: |
           echo "Listing ECR repositories..." 

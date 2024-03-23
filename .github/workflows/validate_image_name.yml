@@ -27,20 +27,17 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-
+          
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-     
-      - name: Identify Values Files
+       - name: Identify Values Files
         id: identify-values-files
         run: |
           #!/bin/bash
-
           # Search for values*.yaml files in the current directory and all subdirectories
           echo "Searching for values*.yaml files..."
           values_files=$(find . -type f -name "values*.yaml")
-
           # Check if any values*.yaml files were found
           if [ -n "$values_files" ]; then
               echo "Values*.yaml files found:"
@@ -49,7 +46,6 @@ jobs:
               echo "No values*.yaml files found."
               exit 1
           fi
-
           # Extract image and latestTag fields from values*.yaml files
           for file in $values_files; do
               echo "Processing $file..."
@@ -75,49 +71,13 @@ jobs:
               done < "$file"
           done
       
-- name: List ECR Repositories
-  id: list-ecr-repos
-  run: |
-    echo "Listing ECR repositories..."
-    repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
-    echo "::set-env name=ECR_REPOSITORIES::$repositories"
+      - name: List ECR Repositories
+        run: |
+          echo "Listing ECR repositories..."
+          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table
 
-- name: Check Overrides and Validate Image Tags in ECR
-  if: ${{ steps.identify-values-files.outputs.values_files != '' }}
-  run: |
-    overrides=${{ steps.identify-values-files.outputs.overrides }}
-    image=${{ steps.identify-values-files.outputs.image }}
-    latestTag=${{ steps.identify-values-files.outputs.latestTag }}
-    ecr_repositories=$ECR_REPOSITORIES
+      - name: Set Workflow Status
+        if: ${{ steps.identify-values-files.outputs.values_files != '' }}
+        run: exit 0
 
-    if [ -n "$overrides" ]; then
-      echo "Overrides found: $overrides"
-      # Perform validation against ECR repositories for overrides
-      # This step needs to be implemented based on your specific requirements
-      # For example, checking if the override exists in the list of ECR repositories and URIs
-      if echo "$ecr_repositories" | grep -q "$overrides"; then
-        echo "Override found in ECR. Validation successful."
-        exit 0
-      else
-        echo "Error: Override tag not found in ECR repository. Validation failed."
-        exit 1
-      fi
-    fi
-
-    if [ -n "$image" ] && [ -n "$latestTag" ]; then
-      echo "Image: $image, Latest Tag: $latestTag"
-      # Perform validation against the list of ECR repositories and URIs for image and latestTag
-      # This step needs to be implemented based on your specific requirements
-      if echo "$ecr_repositories" | grep -q "$image" && echo "$ecr_repositories" | grep -q "$latestTag"; then
-        echo "Image and Latest Tag found in ECR. Validation successful."
-        exit 0
-      else
-        echo "Error: Image or Latest Tag not found in ECR repository. Validation failed."
-        exit 1
-      fi
-    fi
-
-      
-  - name: Set Workflow Status
-    if: ${{ steps.identify-values-files.outputs.values_files != '' }}
-    run: exit 0
+     

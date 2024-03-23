@@ -2,7 +2,8 @@
 name: 
 
 on:
-  push:
+  - push:
+  - pull_request:
     branches: [ main]
 
 jobs:

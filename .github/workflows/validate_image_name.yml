@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - '*/values*.yaml'
+      - '**/values*.yaml'
             
   pull_request:
     branches: [main]
@@ -35,7 +35,7 @@ jobs:
         id: extract-tags
         run: |
           tags=""
-          for file in $(find . -name 'values*.yaml'); do
+          for file in $(find $GITHUB_WORKSPACE -name 'values*.yaml'); do
             tag=$(grep 'image:' "$file" | awk '{print $2}')
             if [ -n "$tag" ]; then
               tags="$tags $tag"

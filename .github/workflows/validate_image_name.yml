@@ -31,7 +31,7 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-       - name: Identify Values Files
+      - name: Identify Values Files
         id: identify-values-files
         run: |
           #!/bin/bash
@@ -79,5 +79,3 @@ jobs:
       - name: Set Workflow Status
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: exit 0
-
-     

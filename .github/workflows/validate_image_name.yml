@@ -35,30 +35,40 @@ jobs:
         run: |
           #!/bin/bash
 
-          # Search for values.yaml files in the current directory and all subdirectories
-          echo "Searching for values.yaml files..."
-          values_files=$(find . -type f -name "values.yaml")
+          # Search for values*.yaml files in the current directory and all subdirectories
+          echo "Searching for values*.yaml files..."
+          values_files=$(find . -type f -name "values*.yaml")
 
-          # Check if any values.yaml files were found
+          # Check if any values*.yaml files were found
           if [ -n "$values_files" ]; then
-              echo "Values.yaml files found:"
+              echo "Values*.yaml files found:"
               echo "$values_files"
           else
-              echo "No values.yaml files found."
+              echo "No values*.yaml files found."
               exit 1
           fi
 
-          # Extract image and latestTag fields from values.yaml files
+          # Extract image and latestTag fields from values*.yaml files
           for file in $values_files; do
               echo "Processing $file..."
               while IFS= read -r line; do
-                  if [[ $line =~ image:\ \"(.+)\" ]]; then
+                  # Extract image value
+                  if [[ $line =~ image:\ (.+) ]]; then
                       image="${BASH_REMATCH[1]}"
                       echo "Image: $image"
                   fi
+                  # Extract latestTag value
                   if [[ $line =~ latestTag:\ (.+) ]]; then
                       latestTag="${BASH_REMATCH[1]}"
                       echo "Latest Tag: $latestTag"
                   fi
               done < "$file"
           done
+
+      - name: Set Workflow Status
+        if: failure()
+        run: exit 1
+
+      - name: Set Workflow Status
+        if: success()
+        run: exit 0

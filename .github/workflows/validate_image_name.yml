@@ -1,4 +1,3 @@
----
 name: ECR Image Tag Validation
 
 on:
@@ -36,26 +35,30 @@ jobs:
         run: |
           #!/bin/bash
 
-          # Search for values*.yaml files in the current directory and all subdirectories
-          echo "Searching for values*.yaml files..."
-          values_files=$(find . -type f -name "values*.yaml")
+          # Search for values.yaml files in the current directory and all subdirectories
+          echo "Searching for values.yaml files..."
+          values_files=$(find . -type f -name "values.yaml")
 
-          # Check if any values*.yaml files were found
+          # Check if any values.yaml files were found
           if [ -n "$values_files" ]; then
-              echo "Values*.yaml files found:"
+              echo "Values.yaml files found:"
               echo "$values_files"
           else
-              echo "No values*.yaml files found here."
+              echo "No values.yaml files found."
+              exit 1
           fi
 
-      - name: Find Latest Tag and Image String
-        id: find-latest-tag
-        run: |
-          for file in "${{ steps.identify-values-files.outputs.values_files }}"; do
-            latest_tag=$(grep -oE 'latestTag: (.*)' "$file" | awk '{print $2}')
-            image_string=$(grep -oE 'image: "(.*)" # Replace this regex with your specific pattern' "$file" | cut -d'"' -f2)
-            echo "Latest Tag: $latest_tag"
-            echo "Image String: $image_string"
-            echo "LATEST_TAG=$latest_tag" >> $GITHUB_ENV
-            echo "IMAGE_STRING=$image_string" >> $GITHUB_ENV
+          # Extract image and latestTag fields from values.yaml files
+          for file in $values_files; do
+              echo "Processing $file..."
+              while IFS= read -r line; do
+                  if [[ $line =~ image:\ \"(.+)\" ]]; then
+                      image="${BASH_REMATCH[1]}"
+                      echo "Image: $image"
+                  fi
+                  if [[ $line =~ latestTag:\ (.+) ]]; then
+                      latestTag="${BASH_REMATCH[1]}"
+                      echo "Latest Tag: $latestTag"
+                  fi
+              done < "$file"
           done

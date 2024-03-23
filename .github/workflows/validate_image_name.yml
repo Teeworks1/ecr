@@ -4,8 +4,9 @@ on:
   pull_request:
     paths:
       - '**'
-
+      
 jobs:
+
   validate_image_tags:
     name: Validate Image Tags
     runs-on: ubuntu-latest

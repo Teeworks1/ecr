@@ -61,7 +61,7 @@ jobs:
                   if [[ $line =~ image:\ (.+) ]]; then
                       image="${BASH_REMATCH[1]}"
                       echo "Image: $image"
-                      # Add logic to validate image against ECR if needed
+                     # Add logic to validate image against ECR if needed
                   fi
                   # Extract latestTag value
                   if [[ $line =~ latestTag:\ (.+) ]]; then
@@ -71,10 +71,52 @@ jobs:
               done < "$file"
           done
       
-      - name: List ECR Repositories
-        run: |
-          echo "Listing ECR repositories..."
-          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table
+      #- name: List ECR Repositories
+        #run: |
+          #echo "Listing ECR repositories..."
+          #aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table
+
+- name: List ECR Repositories
+  id: list-ecr-repos
+  run: |
+    echo "Listing ECR repositories..."
+    repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
+    echo "::set-env name=ECR_REPOSITORIES::$repositories"
+
+- name: Check Overrides and Validate Image Tags in ECR
+  if: ${{ steps.identify-values-files.outputs.values_files != '' }}
+  run: |
+    overrides=${{ steps.identify-values-files.outputs.overrides }}
+    image=${{ steps.identify-values-files.outputs.image }}
+    latestTag=${{ steps.identify-values-files.outputs.latestTag }}
+    ecr_repositories=$ECR_REPOSITORIES
+
+    if [ -n "$overrides" ]; then
+      echo "Overrides found: $overrides"
+      # Perform validation against ECR repositories for overrides
+      # This step needs to be implemented based on your specific requirements
+      # For example, checking if the override exists in the list of ECR repositories and URIs
+      if echo "$ecr_repositories" | grep -q "$overrides"; then
+        echo "Override found in ECR. Validation successful."
+        exit 0
+      else
+        echo "Error: Override tag not found in ECR repository. Validation failed."
+        exit 1
+      fi
+    fi
+
+    if [ -n "$image" ] && [ -n "$latestTag" ]; then
+      echo "Image: $image, Latest Tag: $latestTag"
+      # Perform validation against the list of ECR repositories and URIs for image and latestTag
+      # This step needs to be implemented based on your specific requirements
+      if echo "$ecr_repositories" | grep -q "$image" && echo "$ecr_repositories" | grep -q "$latestTag"; then
+        echo "Image and Latest Tag found in ECR. Validation successful."
+        exit 0
+      else
+        echo "Error: Image or Latest Tag not found in ECR repository. Validation failed."
+        exit 1
+      fi
+    fi
 
       - name: Set Workflow Status
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}

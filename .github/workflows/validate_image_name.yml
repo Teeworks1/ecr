@@ -74,7 +74,12 @@ jobs:
                   fi
               done < "$file"
           done
-
+      
+      - name: List ECR Repositories
+        run: |
+          echo "Listing ECR repositories..."
+          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table
+      
       - name: Set Workflow Status
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: exit 0

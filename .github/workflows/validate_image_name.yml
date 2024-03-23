@@ -1,4 +1,3 @@
----
 name: ECR Image Tag Validation
 
 on:
@@ -8,6 +7,7 @@ on:
   push:
     paths:
       - '**'
+
 jobs:
 
   validate_image_tags:
@@ -58,7 +58,14 @@ jobs:
         id: validate-images
         run: |
           for tag in "${{ steps.extract-tags.outputs.tags }}"; do
-            aws ecr describe-images --repository-name $(echo $tag | cut -d'/' -f4) --image-ids imageTag=$(echo $tag | cut -d'/' -f5) --region $(echo $tag | cut -d'/' -f1)
+            echo "Tag: $tag"
+            region=$(echo "$tag" | cut -d'/' -f1)
+            repository=$(echo "$tag" | cut -d'/' -f4)
+            imageTag=$(echo "$tag" | cut -d'/' -f5)
+            echo "Region: $region"
+            echo "Repository: $repository"
+            echo "Image Tag: $imageTag"
+            aws ecr describe-images --repository-name "$repository" --image-ids imageTag="$imageTag" --region "$region"
             if [ $? -ne 0 ]; then
               echo "Error: Image with tag '$tag' not found in ECR repository."
               exit 1

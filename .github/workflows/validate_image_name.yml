@@ -80,13 +80,13 @@ jobs:
           # Retrieve ECR repositories list
           ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
 
-          # Check if override tag exists in ECR repositories
-          if [[ -n "$overrides" ]]; then
-              echo "Checking overrides against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$overrides"; then
-                  echo "Override tag '$overrides' found in ECR. Validation successful."
+          # Check if overrideTag exists in ECR repositories
+          if [[ -n "$overrideTag" ]]; then
+              echo "Checking overrideTag against ECR repositories..."
+              if echo "$ecr_repositories" | grep -q "$overrideTag"; then
+                  echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
               else
-                  echo "Error: Override tag '$overrides' not found in ECR repository. Validation failed."
+                  echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
                   exit 1
               fi
           fi

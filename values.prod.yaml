@@ -1,0 +1,81 @@
+
+---
+global:
+  latestTag: 3594a2292cb5d74c0705173d881559a6724ff503
+  overrideTag: d58222e0a7a8562b55cc96da9ea6bd9cf9e55719
+  app:
+    name: accounting-flink-jobs
+    env: production
+
+ws-flink-service:
+  jarURI: local:///opt/flink/usrlib/application.jar
+  stateBucketName: accounting-flink-jobs-production-flink
+  flinkConfiguration:
+    state.backend.rocksdb.predefined-options: "FLASH_SSD_OPTIMIZED"
+    state.backend.rocksdb.checkpoint.transfer.thread.num: "2"
+    state.backend.rocksdb.block.cache-size: "8MB"
+    state.backend.rocksdb.writebuffer.size: "64MB"
+    state.backend.rocksdb.writebuffer.count: "2"
+    state.backend.rocksdb.thread.num: "2"
+    state.backend.incremental: "true"
+    state.backend.rocksdb.metrics.estimate-live-data-size: "true"
+    state.backend.rocksdb.metrics.estimate-num-keys: "true"
+    state.backend: "rocksdb"
+    yarn.per-job-cluster.include-user-jar: "DISABLED"
+    web.cancel.enable: "true"
+    kubernetes.taskmanager.cpu.limit-factor: "5.0"
+    kubernetes.jobmanager.cpu.limit-factor: "5.0"
+
+  jobs:
+    - name: book-value-calc
+      image: 526316940316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-flink-jobs-book-value-calculator
+      entryClass: com.wealthsimple.accountingflinkjobs.bookvalue.MainKt
+      flinkVersion: v1_14
+      ephemeralVolume:
+        storageSize: '256Gi'
+        mountPath: '/opt/flink/data'
+      jobManager:
+        resource:
+          memory: 4096m
+      taskManager:
+        resource:
+          memory: 16384m
+          cpu: 2
+      numberOfTaskSlots: 6
+      parallelism: 60
+      flinkConfiguration:
+        io.tmp.dirs: '/opt/flink/data'
+        state.backend.rocksdb.checkpoint.transfer.thread.num: "8"
+
+    - name: database-shovel
+      image: 526316940316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-flink-jobs-database-shovel
+      entryClass: com.wealthsimple.accountingflinkjobs.databaseshovel.MainKt
+      flinkVersion: v1_14
+      jobManager:
+        resource:
+          memory: 4096m
+      taskManager:
+        resource:
+          memory: 8192m
+      numberOfTaskSlots: 1
+      parallelism: 1
+
+    - name: cash-positions-calc
+      image: 526316940316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-flink-jobs-cash-positions-calculator
+      entryClass: com.wealthsimple.accountingflinkjobs.cashpositions.MainKt
+      flinkVersion: v1_14
+      ephemeralVolume:
+        storageSize: '128Gi'
+        mountPath: '/opt/flink/data'
+      jobManager:
+        resource:
+          memory: 4096m
+      taskManager:
+        resource:
+          memory: 8192m
+          cpu: 1
+      numberOfTaskSlots: 2
+      parallelism: 4
+      flinkConfiguration:
+        io.tmp.dirs: '/opt/flink/data'
+        state.backend.rocksdb.checkpoint.transfer.thread.num: "8"

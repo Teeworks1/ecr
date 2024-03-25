@@ -41,34 +41,53 @@ jobs:
               echo "No values*.yaml files found."
               exit 1
           fi
-          # Extract image and latestTag fields from values*.yaml files
+          # Initialize variables for overrideTag, image, and latestTag
+          overrideTag=""
+          image=""
+          latestTag=""
+          # Extract overrideTag, image, and latestTag fields from values*.yaml files
           for file in $values_files; do
               echo "Processing $file..."
               while IFS= read -r line; do
-                  # Check if overrideTag exist
+                  # Check if overrideTag exists
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
                       overrideTag="${BASH_REMATCH[1]}"
                       echo "OverrideTag: $overrideTag"
                       continue
                   fi
-                  # Extract image value
+                  # Check if image exists
                   if [[ $line =~ image:\ (.+) ]]; then
                       image="${BASH_REMATCH[1]}"
                       echo "Image: $image"
                   fi
-                  # Extract latestTag value
+                  # Check if latestTag exists
                   if [[ $line =~ latestTag:\ (.+) ]]; then
                       latestTag="${BASH_REMATCH[1]}"
                       echo "Latest Tag: $latestTag"
                   fi
               done < "$file"
+              # Check if overrideTag and image(s) are found, if not, break the loop and look for latestTag
+              if [[ -n "$overrideTag" && -n "$image" ]]; then
+                  break
+              fi
           done
+          # Check if overrideTag and image(s) are found, if not, echo that latestTag will be checked
+          if [[ -z "$overrideTag" && -z "$image" ]]; then
+              echo "OverrideTag and image(s) not found. Checking for latestTag..."
+          fi
+          # Output the values to be used by the next steps
+          echo "::set-output name=overrideTag::$overrideTag"
+          echo "::set-output name=image::$image"
+          echo "::set-output name=latestTag::$latestTag"
       
+      - name: Match LatestTag or OverrideTag against Image
+        run: |
+
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table
-
+          
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
@@ -105,3 +124,4 @@ jobs:
       - name: Set Workflow Status
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: exit 0
+

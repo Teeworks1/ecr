@@ -60,8 +60,8 @@ jobs:
                       image="${BASH_REMATCH[1]}"
                       echo "Image: $image"
                   fi
-                  # Check if latestTag exists
-                  if [[ $line =~ latestTag:\ (.+) ]]; then
+                  # Check if latestTag exists only if overrideTag is not found
+                  if [[ -z "$overrideTag" && $line =~ latestTag:\ (.+) ]]; then
                       latestTag="${BASH_REMATCH[1]}"
                       echo "Latest Tag: $latestTag"
                   fi
@@ -78,7 +78,10 @@ jobs:
           # Output the values to be used by the next steps
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=image::$image"
-          echo "::set-output name=latestTag::$latestTag"
+          # Output latestTag only if overrideTag is not found
+          if [[ -z "$overrideTag" ]]; then
+              echo "::set-output name=latestTag::$latestTag"
+          fi
 
       - name: Pair Image with Tag
         run: |
@@ -132,8 +135,3 @@ jobs:
                   exit 1
               fi
           fi
-
-          # Check if image and latest tag combination exists in ECR repositories
-          if [[ -n "$image" && -n "$latestTag" ]]; then
-              echo "Checking image and latest tag against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$image" && echo "$ecr_repositories" | grep -q "$latest

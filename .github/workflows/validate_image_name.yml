@@ -89,25 +89,17 @@ jobs:
           # Retrieve values from previous step outputs
           image=${{ steps.identify-values-files.outputs.image }}
           overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
-          latestTag=${{ steps.identify-values-files.outputs.latestTag }}
+          latestTag=${{ steps.identify-values-files.outputs.latestTag }}}
 
-          # Loop over each values file
-          for file in ${{ steps.identify-values-files.outputs.values_files }}; do
-            # Extract the filename without the path
-            filename=$(basename "$file")
+          # Check if overrideTag exists, if not, pair with latestTag
+          if [[ -n "$overrideTag" ]]; then
+              echo "Pairing image with overrideTag..."
+              echo "Image: $image, OverrideTag: $overrideTag"
 
-            # Retrieve the specific overrideTag or latestTag for this file
-            overrideTag=$(grep -E "overrideTag:\s(.+)" "$file" | sed -E 's/^.*overrideTag:\s*//')
-            latestTag=$(grep -E "latestTag:\s(.+)" "$file" | sed -E 's/^.*latestTag:\s*//')
-
-            # Check if overrideTag exists, if not, pair with latestTag
-            if [[ -n "$overrideTag" ]]; then
-                echo "Pairing image with overrideTag for file $filename..."
-                echo "Image: $image, OverrideTag: $overrideTag"
-            else
-                echo "Pairing image with latestTag for file $filename..."
-                echo "Image: $image, Latest Tag: $latestTag"
-            fi
+          else
+              echo "Pairing image with latestTag..."
+              echo "Image: $image, Latest Tag: $latestTag"
+          fi
           done
 
       - name: List ECR Repositories

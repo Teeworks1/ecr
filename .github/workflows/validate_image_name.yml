@@ -84,7 +84,7 @@ jobs:
           if [[ -z "$overrideTag" ]]; then
               echo "::set-output name=latestTag::$latestTag"
           fi
-
+      
       - name: Pair Image with Tag
         run: |
           # Retrieve values from previous step outputs
@@ -126,4 +126,12 @@ jobs:
                   echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
                   exit 1
               fi
+          fi
+
+      - name: Display Validation Result
+        run: |
+          if [ $? -eq 0 ]; then
+              echo "Validation successful. All image tags are valid."
+          else
+              echo "Validation failed. There are issues with the image tags."
           fi

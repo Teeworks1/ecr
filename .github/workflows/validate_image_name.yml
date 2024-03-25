@@ -47,7 +47,7 @@ jobs:
               while IFS= read -r line; do
                   # Check if overrideTag exist
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
-                      overrides="${BASH_REMATCH[1]}"
+                      overrideTag="${BASH_REMATCH[1]}"
                       echo "OverrideTag: $overrideTag"
                       continue
                   fi

@@ -79,7 +79,7 @@ jobs:
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=image::$image"
           echo "::set-output name=latestTag::$latestTag"
-      
+
       - name: Pair Image with Tag
         run: |
           # Retrieve values from previous step outputs
@@ -87,14 +87,24 @@ jobs:
           overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
 
-          # Check if overrideTag exists, if not, pair with latestTag
-          if [[ -n "$overrideTag" ]]; then
-              echo "Pairing image with overrideTag..."
-              echo "Image: $image, OverrideTag: $overrideTag"
-          else
-              echo "Pairing image with latestTag..."
-              echo "Image: $image, Latest Tag: $latestTag"
-          fi
+          # Loop over each values file
+          for file in ${{ steps.identify-values-files.outputs.values_files }}; do
+            # Extract the filename without the path
+            filename=$(basename "$file")
+
+            # Retrieve the specific overrideTag or latestTag for this file
+            overrideTag=$(grep -E "overrideTag:\s(.+)" "$file" | sed -E 's/^.*overrideTag:\s*//')
+            latestTag=$(grep -E "latestTag:\s(.+)" "$file" | sed -E 's/^.*latestTag:\s*//')
+
+            # Check if overrideTag exists, if not, pair with latestTag
+            if [[ -n "$overrideTag" ]]; then
+                echo "Pairing image with overrideTag for file $filename..."
+                echo "Image: $image, OverrideTag: $overrideTag"
+            else
+                echo "Pairing image with latestTag for file $filename..."
+                echo "Image: $image, Latest Tag: $latestTag"
+            fi
+          done
 
       - name: List ECR Repositories
         run: |
@@ -126,14 +136,4 @@ jobs:
           # Check if image and latest tag combination exists in ECR repositories
           if [[ -n "$image" && -n "$latestTag" ]]; then
               echo "Checking image and latest tag against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$image" && echo "$ecr_repositories" | grep -q "$latestTag"; then
-                  echo "Image '$image' with latest tag '$latestTag' found in ECR. Validation successful."
-              else
-                  echo "Error: Image '$image' with latest tag '$latestTag' not found in ECR repository. Validation failed."
-                  exit 1
-              fi
-          fi
-
-      - name: Set Workflow Status
-        if: ${{ steps.identify-values-files.outputs.values_files != '' }}
-        run: exit 0
+              if echo "$ecr_repositories" | grep -q "$image" && echo "$ecr_repositories" | grep -q "$latest

@@ -80,9 +80,18 @@ jobs:
           echo "::set-output name=image::$image"
           echo "::set-output name=latestTag::$latestTag"
       
-      - name: Match LatestTag or OverrideTag against Image
+      - name: Determine Tag Pairing
+        id: determine-tag-pairing
         run: |
-
+          overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
+          image=${{ steps.identify-values-files.outputs.image }}
+          latestTag=${{ steps.identify-values-files.outputs.latestTag }}
+          if [[ -n "$overrideTag" ]]; then
+              echo "::set-output name=tagPairing::overrideTag"
+          else
+              echo "::set-output name=tagPairing::latestTag"
+          fi
+          
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."

@@ -80,18 +80,22 @@ jobs:
           echo "::set-output name=image::$image"
           echo "::set-output name=latestTag::$latestTag"
       
-      - name: Determine Tag Pairing
-        id: determine-tag-pairing
+      - name: Pair Image with Tag
         run: |
-          overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
+          # Retrieve values from previous step outputs
           image=${{ steps.identify-values-files.outputs.image }}
+          overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
+
+          # Check if overrideTag exists, if not, pair with latestTag
           if [[ -n "$overrideTag" ]]; then
-              echo "::set-output name=tagPairing::overrideTag"
+              echo "Pairing image with overrideTag..."
+              echo "Image: $image, OverrideTag: $overrideTag"
           else
-              echo "::set-output name=tagPairing::latestTag"
+              echo "Pairing image with latestTag..."
+              echo "Image: $image, Latest Tag: $latestTag"
           fi
-          
+
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."
@@ -133,4 +137,3 @@ jobs:
       - name: Set Workflow Status
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: exit 0
-

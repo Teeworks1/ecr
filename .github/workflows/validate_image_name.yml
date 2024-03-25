@@ -45,10 +45,10 @@ jobs:
           for file in $values_files; do
               echo "Processing $file..."
               while IFS= read -r line; do
-                  # Check if overrides exist
-                  if [[ $line =~ overrides:\ (.+) ]]; then
+                  # Check if overrideTag exist
+                  if [[ $line =~ overrideTag:\ (.+) ]]; then
                       overrides="${BASH_REMATCH[1]}"
-                      echo "Overrides: $overrides"
+                      echo "OverrideTag: $overrideTag"
                       continue
                   fi
                   # Extract image value

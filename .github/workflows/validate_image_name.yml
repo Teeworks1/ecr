@@ -39,6 +39,7 @@ jobs:
               echo "$values_files"
           else
               echo "No values*.yaml files found."
+              echo "::set-output name=values_files::$values_files"
               exit 1
           fi
           # Initialize variables for overrideTag, image, and latestTag

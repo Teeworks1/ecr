@@ -58,11 +58,11 @@ jobs:
                       continue
                   fi
    
-                  if [[ $line =~ image:\ (.+) ]]; then
-            image="${BASH_REMATCH[1]}"
-            echo "Image: $image"
-            # Store the image in the associative array using the values*.yaml file name as the key
-            images_per_file["$file"]+=" $image"
+                  # Parse the values*.yaml file properly to extract all image values
+                  images=($(awk '/image:/{print $2}' "$file"))
+                  echo "Images found:"
+                  printf '%s\n' "${images[@]}"
+                  echo "::set-output name=images::${images[*]}"
                   
                   # Check if latestTag exists only if overrideTag is not found
                   if [[ -z "$overrideTag" && $line =~ latestTag:\ (.+) ]]; then
@@ -117,17 +117,15 @@ jobs:
               done
           fi
           # Check if latestTag exists in ECR repositories
-          for file in "${!images_per_file[@]}"; do
-              for image in ${images_per_file[$file]}; do
-                  if echo "$ecr_repositories" | grep -q "$latestTag"; then
-                      echo "LatestTag '$latestTag' found in ECR. Validation successful."
-                      echo "Pairing image with latestTag..."
-                      echo "Image: $image, LatestTag: $latestTag"
-                  else
-                      echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
-                      exit 1
-                  fi
-              done
+          for image in "${images[@]}"; do  
+              if echo "$ecr_repositories" | grep -q "$latestTag"; then
+                  echo "LatestTag '$latestTag' found in ECR. Validation successful."
+                  echo "Pairing image with latestTag..."
+                  echo "Image: $image, LatestTag: $latestTag"
+              else
+                  echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
+                  exit 1
+              fi
           done
 
       - name: Display Validation Result

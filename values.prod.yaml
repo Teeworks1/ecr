@@ -2,6 +2,7 @@
 ---
 global:
   latestTag: 3594a2292cb5d74c0705173d881559a6724ff503
+  overrideTag: d58222e0a7a8562b55cc96da9ea6bd9cf9e55719
 
   app:
     name: accounting-flink-jobs

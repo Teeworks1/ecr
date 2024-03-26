@@ -15,14 +15,14 @@ jobs:
         uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-          
+
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
@@ -76,7 +76,7 @@ jobs:
           # Check if overrideTag and image(s) are found, if not, echo that latestTag will be checked
           if [[ -z "$overrideTag" && -z "$image" ]]; then
               echo "OverrideTag and image(s) not found. Checking for latestTag..."
-             
+
           fi
           # Output the values to be used by the next steps
           echo "::set-output name=overrideTag::$overrideTag"
@@ -85,7 +85,7 @@ jobs:
           if [[ -z "$overrideTag" ]]; then
               echo "::set-output name=latestTag::$latestTag"
           fi
-      
+
       - name: Pair Image with Tag
         run: |
           # Retrieve values from previous step outputs
@@ -105,29 +105,49 @@ jobs:
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."
-          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' 
+          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'
           echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
 
-          
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
           # Retrieve values from previous step outputs
-          overrides=${{ steps.identify-values-files.outputs.overrideTag }}
+          overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
           image=${{ steps.identify-values-files.outputs.image }}
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
 
           # Retrieve ECR repositories list
           ecr_repositories=$(echo "${{ steps.list-ecr-repositories.outputs.ecr_repositories }}" | base64 -d)
-          
 
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then
               echo "Checking overrideTag against ECR repositories..."
               if echo "$ecr_repositories" | grep -q "$overrideTag"; then
                   echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
+                  echo "Pairing image with overrideTag..."
+                  echo "Image: $image, OverrideTag: $overrideTag"
               else
                   echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
+                  # Check if latestTag exists in ECR repositories
+                  if echo "$ecr_repositories" | grep -q "$latestTag"; then
+                      echo "LatestTag '$latestTag' found in ECR. Validation successful."
+                      echo "Pairing image with latestTag..."
+                      echo "Image: $image, LatestTag: $latestTag"
+                  else
+                      echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
+                      exit 1
+                  fi
+              fi
+          else
+              # If overrideTag is not found, pair with latestTag
+              echo "OverrideTag not found. Checking latestTag..."
+              # Check if latestTag exists in ECR repositories
+              if echo "$ecr_repositories" | grep -q "$latestTag"; then
+                  echo "LatestTag '$latestTag' found in ECR. Validation successful."
+                  echo "Pairing image with latestTag..."
+                  echo "Image: $image, LatestTag: $latestTag"
+              else
+                  echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
                   exit 1
               fi
           fi
@@ -137,5 +157,5 @@ jobs:
           if [ $? -eq 0 ]; then
               echo "Validation successful. All image tags are valid."
           else
-              echo "Validation failed. There are issues with the image tags."
+              echo  "Validation failed. There are issues with the image tags."
           fi

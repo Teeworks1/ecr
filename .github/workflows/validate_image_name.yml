@@ -84,7 +84,7 @@ jobs:
           if [[ -z "$overrideTag" ]]; then
               echo "::set-output name=latestTag::$latestTag"
           fi
-          
+
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."
@@ -100,7 +100,7 @@ jobs:
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
 
           # Retrieve ECR repositories list
-          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64
+          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
 
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then

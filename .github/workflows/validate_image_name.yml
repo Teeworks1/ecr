@@ -138,6 +138,20 @@ jobs:
                       exit 1
                   fi
               fi
+          else
+              # If overrideTag is not found, pair with latestTag
+              echo "OverrideTag not found. Checking latestTag..."
+              # Check if latestTag exists in ECR repositories
+              if echo "$ecr_repositories" | grep -q "$latestTag"; then
+                  echo "LatestTag '$latestTag' found in ECR. Validation successful."
+                  echo "Pairing image with latestTag..."
+                  echo "Image: $image, LatestTag: $latestTag"
+              else
+                  echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
+                  exit 1
+              fi
+          fi
+          
       - name: Display Validation Result
         run: |
           if [ $? -eq 0 ]; then

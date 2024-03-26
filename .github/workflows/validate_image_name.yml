@@ -76,6 +76,7 @@ jobs:
           # Check if overrideTag and image(s) are found, if not, echo that latestTag will be checked
           if [[ -z "$overrideTag" && -z "$image" ]]; then
               echo "OverrideTag and image(s) not found. Checking for latestTag..."
+             
           fi
           # Output the values to be used by the next steps
           echo "::set-output name=overrideTag::$overrideTag"
@@ -112,7 +113,7 @@ jobs:
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
           # Retrieve values from previous step outputs
-          overrides=${{ steps.identify-values-files.outputs.overrides }}
+          overrides=${{ steps.identify-values-files.outputs.overrideTag }}
           image=${{ steps.identify-values-files.outputs.image }}
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
 

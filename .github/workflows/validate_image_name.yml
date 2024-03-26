@@ -118,7 +118,7 @@ jobs:
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
 
           # Retrieve ECR repositories list
-          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
+          ecr_repositories=$(echo "${{ steps.list-ecr-repositories.outputs.ecr_repositories }}" | base64 -d)
           
 
           # Check if overrideTag exists in ECR repositories

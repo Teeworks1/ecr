@@ -96,7 +96,7 @@ jobs:
         run: |
           # Retrieve values from previous step outputs
           overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
-          image=${{ steps.identify-values-files.outputs.image }}
+          image=(${steps.identify-values-files.outputs.image//,/ })  # Split image values by comma and store them in an array
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
 
           # Retrieve ECR repositories list

@@ -99,7 +99,7 @@ jobs:
               echo "Image: $image, OverrideTag: $overrideTag"
           else
               echo "Pairing image with latestTag..."
-              echo "Image: $image, Latest Tag: $latestTag"
+              echo "Image: $image, LatestTag: $latestTag"
           fi
 
       - name: List ECR Repositories

@@ -67,6 +67,7 @@ jobs:
                           fi
                       done < "$file"
                   done
+
                   # Check if latestTag exists only if overrideTag is not found
                   if [[ -z "$overrideTag" && $line =~ latestTag:\ (.+) ]]; then
                       latestTag="${BASH_REMATCH[1]}"
@@ -121,7 +122,7 @@ jobs:
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
 
           # Retrieve ECR repositories list
-          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
+          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64
 
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then
@@ -151,4 +152,5 @@ jobs:
           if [ $? -eq 0 ]; then
               echo "Validation successful. All image tags are valid."
           else
-              echo  "Validation failed. There are issues with the
+              echo  "Validation failed. There are issues with the image tags."
+          fi

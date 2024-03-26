@@ -57,11 +57,13 @@ jobs:
                       echo "OverrideTag: $overrideTag"
                       continue
                   fi
-                  # Check if image exists
-                  if [[ $line =~ image:\ (.+) ]]; then
-                      image="${BASH_REMATCH[1]}"
-                      echo "Image: $image"
-                  fi
+   
+                  # Parse the values*.yaml file properly to extract all image values
+                  images=($(awk '/image:/{print $2}' "$file"))
+                  echo "Images found:"
+                  printf '%s\n' "${images[@]}"
+                  echo "::set-output name=images::${images[*]}"
+                  
                   # Check if latestTag exists only if overrideTag is not found
                   if [[ -z "$overrideTag" && $line =~ latestTag:\ (.+) ]]; then
                       latestTag="${BASH_REMATCH[1]}"
@@ -115,7 +117,7 @@ jobs:
               done
           fi
           # Check if latestTag exists in ECR repositories
-          for image in "${images[@]}"; do  # Change made here
+          for image in "${images[@]}"; do  
               if echo "$ecr_repositories" | grep -q "$latestTag"; then
                   echo "LatestTag '$latestTag' found in ECR. Validation successful."
                   echo "Pairing image with latestTag..."

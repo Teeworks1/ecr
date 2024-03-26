@@ -96,7 +96,7 @@ jobs:
         run: |
           # Retrieve values from previous step outputs
           overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
-          image=(${steps.identify-values-files.outputs.image//,/ })  # Split image values by comma and store them in an array
+          images=(${{ steps.identify-values-files.outputs.image }})  # Change made here
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
 
           # Retrieve ECR repositories list
@@ -105,25 +105,29 @@ jobs:
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then
               echo "Checking overrideTag against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$overrideTag"; then
-                  echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
-                  echo "Pairing image with overrideTag..."
-                  echo "Image: $image, OverrideTag: $overrideTag"
-                  exit 0
-              else
-                  echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
-              fi
+              for image in "${images[@]}"; do  # Change made here
+                  if echo "$ecr_repositories" | grep -q "$overrideTag"; then
+                      echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
+                      echo "Pairing image with overrideTag..."
+                      echo "Image: $image, OverrideTag: $overrideTag"
+                      exit 0
+                  else
+                      echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
+                  fi
+              done
           fi
 
           # Check if latestTag exists in ECR repositories
-          if echo "$ecr_repositories" | grep -q "$latestTag"; then
-              echo "LatestTag '$latestTag' found in ECR. Validation successful."
-              echo "Pairing image with latestTag..."
-              echo "Image: $image, LatestTag: $latestTag"
-          else
-              echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
-              exit 1
-          fi
+          for image in "${images[@]}"; do  # Change made here
+              if echo "$ecr_repositories" | grep -q "$latestTag"; then
+                  echo "LatestTag '$latestTag' found in ECR. Validation successful."
+                  echo "Pairing image with latestTag..."
+                  echo "Image: $image, LatestTag: $latestTag"
+              else
+                  echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
+                  exit 1
+              fi
+          done
 
       - name: Display Validation Result
         run: |

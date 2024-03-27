@@ -1,4 +1,3 @@
----
 name: ECR Image Tag Validation
 
 on:
@@ -81,6 +80,32 @@ jobs:
           if [[ -z "$overrideTag" && -z "$image" ]]; then
               echo "OverrideTag and image(s) not found. Checking for latestTag..."
           fi
+          # Pair the found tag (overrideTag or latestTag) with all the images
+          if [[ -n "$overrideTag" || -n "$latestTag" ]]; then
+              images=()
+              for file in $values_files; do
+                  echo "Processing $file..."
+                  while IFS= read -r line; do
+                      # Check if image exists
+                      if [[ $line =~ image:\ (.+) ]]; then
+                          image="${BASH_REMATCH[1]}"
+                          echo "Image: $image"
+                          # Pair image with overrideTag or latestTag
+                          if [[ -n "$overrideTag" ]]; then
+                              echo "Pairing image with overrideTag..."
+                              echo "Image: $image, OverrideTag: $overrideTag"
+                          elif [[ -n "$latestTag" ]]; then
+                              echo "Pairing image with latestTag..."
+                              echo "Image: $image, LatestTag: $latestTag"
+                          fi
+                          images+=("$image")
+                      fi
+                  done < "$file"
+              done
+              # Output the images
+              echo "::set-output name=images::${images[*]}"
+          fi
+
           # Output the values to be used by the next steps
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=image::$image"
@@ -88,11 +113,13 @@ jobs:
           if [[ -z "$overrideTag" ]]; then
               echo "::set-output name=latestTag::$latestTag"
           fi
+
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  
           echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
+
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |

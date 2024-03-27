@@ -104,29 +104,35 @@ jobs:
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then
               echo "Checking overrideTag against ECR repositories..."
-              for image in "${images[@]}"; do  # Change made here
+              for image in "${images[@]}"; do
                   if echo "$ecr_repositories" | grep -q "$overrideTag"; then
                       echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
                       echo "Pairing image with overrideTag..."
                       echo "Image: $image, OverrideTag: $overrideTag"
-                      exit 0
+                      exit 0  # Exit loop if overrideTag is found
                   else
                       echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
                   fi
               done
           fi
           # Check if latestTag exists in ECR repositories
-          for image in "${images[@]}"; do  # Change made here
-              if echo "$ecr_repositories" | grep -q "$latestTag"; then
-                  echo "LatestTag '$latestTag' found in ECR. Validation successful."
-                  echo "Pairing image with latestTag..."
-                  echo "Image: $image, LatestTag: $latestTag"
-              else
-                  echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
-                  exit 1
-              fi
-          done
-
+          if [[ -n "$latestTag" ]]; then
+              echo "Checking latestTag against ECR repositories..."
+              for image in "${images[@]}"; do
+                  if echo "$ecr_repositories" | grep -q "$latestTag"; then
+                      echo "LatestTag '$latestTag' found in ECR. Validation successful."
+                      echo "Pairing image with latestTag..."
+                      echo "Image: $image, LatestTag: $latestTag"
+                  else
+                      echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
+                      exit 1
+                  fi
+              done
+          else
+              echo "Error: Neither OverrideTag nor LatestTag found. Validation failed."
+              exit 1
+          fi
+          
       - name: Display Validation Result
         run: |
           if [ $? -eq 0 ]; then

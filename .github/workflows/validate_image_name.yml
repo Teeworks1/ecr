@@ -135,10 +135,11 @@ jobs:
       
       - name: List ECR Repositories
         run: |
-          echo "Listing ECR repositories..."
-          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  
-          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"        
-          echo "::set-output name=ecr_repositories::$all_repositories"
+          echo "Listing ECR repositories in us-east-1..."
+          aws ecr describe-repositories --region us-east-1 --query 'repositories[*].[repositoryName, repositoryUri]'  
+          echo "Listing ECR repositories in us-west-1..."
+          aws ecr describe-repositories --region us-west-1 --query 'repositories[*].[repositoryName, repositoryUri]'  
+
 
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}

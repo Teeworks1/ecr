@@ -1,3 +1,4 @@
+---
 name: ECR Image Tag Validation
 
 on:
@@ -51,7 +52,7 @@ jobs:
 
           # Initialize variables for overrideTag, image, and latestTag
           overrideTag=""
-          image=""
+          images=()
           latestTag=""
 
           # Extract overrideTag, image, and latestTag fields from YAML files
@@ -68,6 +69,15 @@ jobs:
                   if [[ $line =~ image:\ (.+) ]]; then
                       image="${BASH_REMATCH[1]}"
                       echo "Image: $image"
+                      # Pair image with overrideTag or latestTag
+                      if [[ -n "$overrideTag" ]]; then
+                          echo "Pairing image with overrideTag..."
+                          echo "Image: $image, OverrideTag: $overrideTag"
+                      elif [[ -n "$latestTag" ]]; then
+                          echo "Pairing image with latestTag..."
+                          echo "Image: $image, LatestTag: $latestTag"
+                      fi
+                      images+=("$image")
                   fi
                   # Check if latestTag exists only if overrideTag is not found
                   if [[ -z "$overrideTag" && $line =~ latestTag:\ (.+) ]]; then
@@ -80,7 +90,7 @@ jobs:
           # Output the values to be used by the next steps
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=latestTag::$latestTag"
-          echo "::set-output name=image::$image"
+          echo "::set-output name=images::${images[*]}"
 
       - name: List ECR Repositories
         run: |
@@ -93,29 +103,39 @@ jobs:
         run: |
           # Retrieve values from previous step outputs
           overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
-          image=${{ steps.identify-values-files.outputs.image }}
+          images=(${{ steps.identify-values-files.outputs.images }})
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
           # Retrieve ECR repositories list
           ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then
               echo "Checking overrideTag against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$overrideTag"; then
-                  echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
-                  echo "Pairing image with overrideTag..."
-                  echo "Image: $image, OverrideTag: $overrideTag"
-                  exit 0
-              else
-                  echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
-              fi
+              for image in "${images[@]}"; do
+                  if echo "$ecr_repositories" | grep -q "$overrideTag"; then
+                      echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
+                      echo "Pairing image with overrideTag..."
+                      echo "Image: $image, OverrideTag: $overrideTag"
+                      exit 0
+                  fi
+              done
+              echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
+              exit 1
           fi
           # Check if latestTag exists in ECR repositories
-          if echo "$ecr_repositories" | grep -q "$latestTag"; then
-              echo "LatestTag '$latestTag' found in ECR. Validation successful."
-              echo "Pairing image with latestTag..."
-              echo "Image: $image, LatestTag: $latestTag"
+          if [[ -n "$latestTag" ]]; then
+              echo "Checking latestTag against ECR repositories..."
+              for image in "${images[@]}"; do
+                  if echo "$ecr_repositories" | grep -q "$latestTag"; then
+                      echo "LatestTag '$latestTag' found in ECR. Validation successful."
+                      echo "Pairing image with latestTag..."
+                      echo "Image: $image, LatestTag: $latestTag"
+                  else
+                      echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
+                      exit 1
+                  fi
+              done
           else
-              echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
+              echo "Error: Neither OverrideTag nor LatestTag found. Validation failed."
               exit 1
           fi
 

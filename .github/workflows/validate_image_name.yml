@@ -30,54 +30,61 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      jobs:
+  validate_image_tags:
+    name: Validate Image Tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Pull Request
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Identify Values Files
         id: identify-values-files
         run: |
           #!/bin/bash
-
-          # Search for all YAML files in the current directory and all subdirectories
-          echo "Searching for YAML files..."
-          yaml_files=$(find . -type f -name "*.yaml")
-
-          # Check if any YAML files were found
-          if [ -n "$yaml_files" ]; then
-              echo "YAML files found:"
-              echo "$yaml_files"
-              # Set an output for YAML files found
-              echo "::set-output name=yaml_files::$yaml_files"
+          # Search for values*.yaml files in the current directory and all subdirectories
+          echo "Searching for values*.yaml files..."
+          values_files=$(find . -type f -name "values*.yaml")
+          # Check if any values*.yaml files were found
+          if [ -n "$values_files" ]; then
+              echo "Values*.yaml files found:"
+              echo "$values_files"
+              # Set an output for values files found
+              echo "::set-output name=values_files::$values_files"
           else
-              echo "No YAML files found."
+              echo "No values*.yaml files found."
               exit 1
           fi
-
           # Initialize variables for overrideTag, image, and latestTag
           overrideTag=""
-          images=()
+          image=""
           latestTag=""
-
-          # Extract overrideTag, image, and latestTag fields from YAML files
-          for file in $yaml_files; do
+          # Extract overrideTag, image, and latestTag fields from values*.yaml files
+          for file in $values_files; do
               echo "Processing $file..."
               while IFS= read -r line; do
                   # Check if overrideTag exists
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
                       overrideTag="${BASH_REMATCH[1]}"
                       echo "OverrideTag: $overrideTag"
-                      break 2  # Break both inner and outer loop if overrideTag is found
+                      continue
                   fi
                   # Check if image exists
                   if [[ $line =~ image:\ (.+) ]]; then
                       image="${BASH_REMATCH[1]}"
                       echo "Image: $image"
-                      # Pair image with overrideTag or latestTag
-                      if [[ -n "$overrideTag" ]]; then
-                          echo "Pairing image with overrideTag..."
-                          echo "Image: $image, OverrideTag: $overrideTag"
-                      elif [[ -n "$latestTag" ]]; then
-                          echo "Pairing image with latestTag..."
-                          echo "Image: $image, LatestTag: $latestTag"
-                      fi
-                      images+=("$image")
                   fi
                   # Check if latestTag exists only if overrideTag is not found
                   if [[ -z "$overrideTag" && $line =~ latestTag:\ (.+) ]]; then
@@ -85,13 +92,23 @@ jobs:
                       echo "Latest Tag: $latestTag"
                   fi
               done < "$file"
+              # Check if overrideTag and image(s) are found, if not, break the loop and look for latestTag
+              if [[ -n "$overrideTag" && -n "$image" ]]; then
+                  break
+              fi
           done
-
+          # Check if overrideTag and image(s) are found, if not, echo that latestTag will be checked
+          if [[ -z "$overrideTag" && -z "$image" ]]; then
+              echo "OverrideTag and image(s) not found. Checking for latestTag..."
+          fi
           # Output the values to be used by the next steps
           echo "::set-output name=overrideTag::$overrideTag"
-          echo "::set-output name=latestTag::$latestTag"
-          echo "::set-output name=images::${images[*]}"
-
+          echo "::set-output name=image::$image"
+          # Output latestTag only if overrideTag is not found
+          if [[ -z "$overrideTag" ]]; then
+              echo "::set-output name=latestTag::$latestTag"
+          fi
+          
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."

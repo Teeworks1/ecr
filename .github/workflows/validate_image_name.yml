@@ -26,7 +26,6 @@ jobs:
             path/to/cache-directory
           key: ${{ runner.os }}-build-${{ hashFiles('**/values*.yaml') }}
 
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

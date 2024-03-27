@@ -59,7 +59,7 @@ jobs:
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
                       overrideTag="${BASH_REMATCH[1]}"
                       echo "OverrideTag: $overrideTag"
-                      continue
+                      #continue
                   fi
                   # Check if image exists
                   if [[ $line =~ image:\ (.+) ]]; then

@@ -49,6 +49,26 @@ ws-flink-service:
         io.tmp.dirs: '/opt/flink/data'
         state.backend.rocksdb.checkpoint.transfer.thread.num: "8"
 
+    - name: book-value-calc
+      image: 22648499440316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-hide-my-ass
+      entryClass: com.wealthsimple.accountingflinkjobs.bookvalue.MainKt
+      flinkVersion: v1_14
+      ephemeralVolume:
+        storageSize: '256Gi'
+        mountPath: '/opt/flink/data'
+      jobManager:
+        resource:
+          memory: 4096m
+      taskManager:
+        resource:
+          memory: 16384m
+          cpu: 2
+      numberOfTaskSlots: 6
+      parallelism: 60
+      flinkConfiguration:
+        io.tmp.dirs: '/opt/flink/data'
+        state.backend.rocksdb.checkpoint.transfer.thread.num: "8"
+
     - name: database-shovel
       image: 5337833900940316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-flink-jobs-database-shovel
       entryClass: com.wealthsimple.accountingflinkjobs.databaseshovel.MainKt

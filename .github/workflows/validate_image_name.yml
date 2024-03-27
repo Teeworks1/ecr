@@ -19,6 +19,14 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Cache repository state
+        uses: actions/cache@v2
+        with:
+          path: |
+            path/to/cache-directory
+          key: ${{ runner.os }}-build-${{ hashFiles('**/values*.yaml') }}
+
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

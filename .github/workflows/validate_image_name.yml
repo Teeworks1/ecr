@@ -37,7 +37,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Login to Amazon ECR in us-east-1
-        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.us-east-1.amazonaws.com
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Configure AWS Credentials for Region 2
         uses: aws-actions/configure-aws-credentials@v4

@@ -12,6 +12,9 @@ jobs:
   validate_image_tags:
     name: Validate Image Tags
     runs-on: ubuntu-latest
+  
+  
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' && contains(github.event.head_commit.modified, 'values') }}
 
     steps:
       - name: Checkout Pull Request

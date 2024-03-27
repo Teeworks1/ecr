@@ -3,10 +3,10 @@ name: ECR Image Tag Validation
 on:
   pull_request:
     paths:
-      - '**'
+      - '**/values*.yaml'
   push:
     paths:
-      - '**'
+      - '**/values*.yaml'
 
 jobs:
   validate_image_tags:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
   
   
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' && contains(github.event.head_commit.modified, 'values') }}
+    #if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' && contains(github.event.head_commit.modified, 'values') }}
 
     steps:
       - name: Checkout Pull Request

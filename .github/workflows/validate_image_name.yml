@@ -139,6 +139,9 @@ jobs:
           aws ecr describe-repositories --region us-east-1 --query 'repositories[*].[repositoryName, repositoryUri]'  
           echo "Listing ECR repositories in us-west-1..."
           aws ecr describe-repositories --region us-west-1 --query 'repositories[*].[repositoryName, repositoryUri]'  
+          echo "Listing ECR repositories..."
+          all_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
+          echo "::set-output name=ecr_repositories::$all_repositories"
 
 
       - name: Check Overrides and Validate Image Tags in ECR
@@ -149,11 +152,11 @@ jobs:
           image=${{ steps.identify-values-files.outputs.image }}
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
           # Retrieve ECR repositories list
-          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
+          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.all_repositories }}" | base64 -d)
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then
               echo "Checking overrideTag against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$overrideTag"; then
+              if echo "$all_repositories" | grep -q "$overrideTag"; then
                   echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
                   echo "Pairing image with overrideTag..."
                   echo "Image: $image, OverrideTag: $overrideTag"
@@ -163,7 +166,7 @@ jobs:
               fi
           fi
           # Check if latestTag exists in ECR repositories
-          if echo "$ecr_repositories" | grep -q "$latestTag"; then
+          if echo "$all_repositories" | grep -q "$latestTag"; then
               echo "LatestTag '$latestTag' found in ECR. Validation successful."
               echo "Pairing image with latestTag..."
               echo "Image: $image, LatestTag: $latestTag"

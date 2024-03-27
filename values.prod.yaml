@@ -50,7 +50,7 @@ ws-flink-service:
         state.backend.rocksdb.checkpoint.transfer.thread.num: "8"
 
     - name: book-value-calc
-      image: 22648499440316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-hide-my-ass
+      image: 22648499440316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-hide-my-asses
       entryClass: com.wealthsimple.accountingflinkjobs.bookvalue.MainKt
       flinkVersion: v1_14
       ephemeralVolume:

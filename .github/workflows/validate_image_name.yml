@@ -30,26 +30,6 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      jobs:
-  validate_image_tags:
-    name: Validate Image Tags
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Pull Request
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-
       - name: Identify Values Files
         id: identify-values-files
         run: |
@@ -108,7 +88,7 @@ jobs:
           if [[ -z "$overrideTag" ]]; then
               echo "::set-output name=latestTag::$latestTag"
           fi
-          
+
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."

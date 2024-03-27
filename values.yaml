@@ -7,4 +7,13 @@ latestTag: 4757584648944746ffdhfg7847465
 image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction:latest
 overrideTag: e2878978974897897098947848
 
+latestTag: 4757584648944746ffdhfg7847465
+#env:
+  #replicas: 3
+
+#spec:
+  #containers:
+image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction:latest
+overrideTag: e2878978974897897098947848
+
 

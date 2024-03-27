@@ -1,3 +1,4 @@
+---
 name: ECR Image Tag Validation
 
 on:

@@ -130,7 +130,7 @@ jobs:
               echo "::set-output name=latestTag::$latestTag"
           fi
       
-     - name: List ECR Repositories
+      - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  

@@ -130,18 +130,13 @@ jobs:
               echo "::set-output name=latestTag::$latestTag"
           fi
       
-      - name: List ECR Repositories
+     - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."
-          # Get a list of all AWS regions
-          regions=$(aws ec2 describe-regions --output text --query "Regions[*].RegionName")
+          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  
+          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"        
+          echo "::set-output name=ecr_repositories::$all_repositories"
 
-          # Loop through each region
-          for region in $regions; do
-          echo "Region: $region"
-          repositories=$(aws ecr describe-repositories --region $region --query 'repositories[*].[repositoryName, repositoryUri]')
-          echo "::set-output name=ecr_repositories::$repositories"
-          done
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |

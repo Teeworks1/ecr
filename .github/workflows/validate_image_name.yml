@@ -136,4 +136,8 @@ jobs:
 
       - name: Display Validation Result
         run: |
-          if [ $? -eq
+          if [ $? -eq 0 ]; then
+              echo "Validation successful. All image tags are valid."
+          else
+              echo  "Validation failed. There are issues with the image tags."
+          fi

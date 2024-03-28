@@ -90,7 +90,7 @@ jobs:
               exit 0
           fi
           # If overrideTag is not found, search for latestTag
-          if ! $override_found; then
+          if overrideTag=false; then
               echo "OverrideTag not found. Searching for latestTag..."
               # Loop through each values*.yaml file
               for file in $values_files; do
@@ -134,14 +134,15 @@ jobs:
           # Retrieve values from previous step outputs
           overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
+          image=${{ steps.identify-values-files.outputs.image }}
           # Retrieve ECR repositories list
-          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" )
+          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}")
+
           # Check if overrideTag or latestTag exists in ECR repositories
           if [[ -n "$overrideTag" || -n "$latestTag" ]]; then
               echo "Checking overrideTag/latestTag against ECR repositories..."
               tagToPair=""
               if [[ -n "$overrideTag" && $(echo "$ecr_repositories" | grep -q "$overrideTag") ]]; then
-            
                   echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
                   tagToPair="$overrideTag"
               elif [[ -n "$latestTag" && $(echo "$ecr_repositories" | grep -q "$latestTag") ]]; then
@@ -151,17 +152,23 @@ jobs:
                   echo "Error: Neither OverrideTag nor LatestTag found in ECR repository. Validation failed."
                   exit 1
               fi
-              # Pair image with tag (overrideTag or latestTag)
-              echo "Pairing image with $tagToPair..."
-              echo "Image: $image, Tag: $tagToPair"
+
+              # Check if the image exists in ECR repositories
+              if [[ $(echo "$ecr_repositories" | grep -q "$image") ]]; then
+                  echo "Image '$image' found in ECR. Pairing with $tagToPair..."
+                  echo "Image: $image, Tag: $tagToPair"
+              else
+                  echo "Error: Image '$image' not found in ECR repository. Validation failed."
+                  exit 1
+              fi
+
               # Exit with success
               exit 0
           else
               # If neither overrideTag nor latestTag are found, exit with failure
-              echo "Error: Neither OverrideTag nor LatestTag provided. Validation failed"
+              echo "Error: Neither OverrideTag nor LatestTag provided. Validation failed."
               exit 1
           fi
-
       - name: Display Validation Result
         run: |
           if [ $? -eq 0 ]; then
@@ -169,3 +176,4 @@ jobs:
           else
               echo  "Validation failed. There are issues with the image tags."
           fi
+

@@ -78,7 +78,7 @@ jobs:
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
                       overrideTag="${BASH_REMATCH[1]}"
                       echo "OverrideTag: $overrideTag"
-                      continue
+                      #continue
                   fi
                   # Check if image exists
                   if [[ $line =~ image:\ (.+) ]]; then
@@ -99,6 +99,31 @@ jobs:
           # Check if overrideTag and image(s) are found, if not, echo that latestTag will be checked
           if [[ -z "$overrideTag" && -z "$image" ]]; then
               echo "OverrideTag and image(s) not found. Checking for latestTag..."
+          fi
+          # Pair the found tag (overrideTag or latestTag) with all the images
+          if [[ -n "$overrideTag" || -n "$latestTag" ]]; then
+              images=()
+              for file in $values_files; do
+                  echo "Processing $file..."
+                  while IFS= read -r line; do
+                      # Check if image exists
+                      if [[ $line =~ image:\ (.+) ]]; then
+                          image="${BASH_REMATCH[1]}"
+                          echo "Image: $image"
+                          # Pair image with overrideTag or latestTag
+                          if [[ -n "$overrideTag" ]]; then
+                              echo "Pairing image with overrideTag..."
+                              echo "Image: $image, OverrideTag: $overrideTag"
+                          elif [[ -n "$latestTag" ]]; then
+                              echo "Pairing image with latestTag..."
+                              echo "Image: $image, LatestTag: $latestTag"
+                          fi
+                          images+=("$image")
+                      fi
+                  done < "$file"
+              done
+              # Output the images
+              echo "::set-output name=images::${images[*]}"
           fi
           # Output the values to be used by the next steps
           echo "::set-output name=overrideTag::$overrideTag"

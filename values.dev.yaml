@@ -4,7 +4,7 @@ latestTag: 4757584648944746ffdhfg7847465
 
 #spec:
   #containers:
-image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction:latest
+image: 891376975226.dkr.ecr.us-west-1.amazonaws.com/bankie:4847839030BBD
 overrideTag: e2878978974897897098947848
 
 

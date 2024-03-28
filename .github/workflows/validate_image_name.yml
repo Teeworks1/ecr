@@ -162,7 +162,7 @@ jobs:
                   echo "Image: $image, OverrideTag: $overrideTag"
                   exit 0
               else
-                  echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
+                  echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation for overrideTag failed."
               fi
           fi
           # Check if latestTag exists in ECR repositories
@@ -171,7 +171,7 @@ jobs:
               echo "Pairing image with latestTag..."
               echo "Image: $image, LatestTag: $latestTag"
           else
-              echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
+              echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation for LatestTag failed."
               exit 1
           fi
           

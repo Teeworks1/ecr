@@ -119,6 +119,15 @@ jobs:
           if [[ -z "$overrideTag" ]]; then
               echo "::set-output name=latestTag::$latestTag"
           fi
+      - name: Echo Values
+        run: |
+          echo "overrideTag: $overrideTag"
+          echo "image: $image"
+          echo "latestTag: $latestTag"
+        env:
+          overrideTag: ${{ steps.identify-values-files.outputs.overrideTag }}
+          image: ${{ steps.identify-values-files.outputs.image }}
+          latestTag: ${{ steps.identify-values-files.outputs.latestTag }}
 
       - name: List ECR Repositories
         run: |

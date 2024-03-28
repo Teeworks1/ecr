@@ -139,10 +139,11 @@ jobs:
           if [[ -n "$overrideTag" || -n "$latestTag" ]]; then
               echo "Checking overrideTag/latestTag against ECR repositories..."
               tagToPair=""
-              if [[ -n "$overrideTag" && echo "$ecr_repositories" | grep -q "$overrideTag" ]]; then
+              if [[ -n "$overrideTag" && $(echo "$ecr_repositories" | grep -q "$overrideTag") ]]; then
+            
                   echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
                   tagToPair="$overrideTag"
-              elif [[ -n "$latestTag" && echo "$ecr_repositories" | grep -q "$latestTag" ]]; then
+              elif [[ -n "$latestTag" && $(echo "$ecr_repositories" | grep -q "$latestTag") ]]; then
                   echo "LatestTag '$latestTag' found in ECR. Validation successful."
                   tagToPair="$latestTag"
               else

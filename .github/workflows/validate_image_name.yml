@@ -177,6 +177,18 @@ jobs:
                   echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
               fi
           fi
+          # Check if image exists in ECR repositories
+          if [[ -n "$image" ]]; then
+              echo "Checking image against ECR repositories..."
+              if echo "$ecr_repositories" | grep -q "$image"; then
+                  echo "image '$image' found in ECR. Validation successful."
+                  echo "image to be paired with overrideTag or latestTag..."
+                  #echo "Image: $image, OverrideTag: $overrideTag"
+                  exit 0
+              else
+                  echo "Error: image '$image' not found in ECR repository. Validation failed."
+              fi
+          fi
           # Check if latestTag exists in ECR repositories
           if echo "$ecr_repositories" | grep -q "$latestTag"; then
               echo "LatestTag '$latestTag' found in ECR. Validation successful."

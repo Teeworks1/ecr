@@ -38,20 +38,18 @@ jobs:
 
       - name: Login to Amazon ECR in us-east-1
         uses: aws-actions/amazon-ecr-login@v2
-        with:
-          region: us-east-1
+       
+      #- name: Configure AWS Credentials for Region 2
+        #uses: aws-actions/configure-aws-credentials@v4
+        #with:
+          #aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_REGION_2 }}
+          #aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_REGION_2 }}
+         # aws-region: us-west-1
 
-      - name: Configure AWS Credentials for Region 2
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_REGION_2 }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_REGION_2 }}
-          aws-region: us-west-1
-
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-        with:
-          region: us-east-1
+      #- name: Login to Amazon ECR
+        #uses: aws-actions/amazon-ecr-login@v2
+        #with:
+          #region: us-east-1
 
       - name: Identify Values Files
         id: identify-values-files
@@ -152,25 +150,12 @@ jobs:
          # echo "Listing ECR repositories..."
          # aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  
          # echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
-      - name: List ECR Repos
+      - name: List ECR Repositories
         run: |
-          echo "Listing ECR repositories from images..."
-          # Get the images from the output
-          images=$(echo "${{ steps.extract-images.outputs.images }}")
-
-          # Extract the regions from the image URIs
-          regions=$(echo "$images" | grep -oE 'ecr\.[a-z0-9\-]+\.amazonaws\.com' | cut -d'.' -f2 | sort -u)
-
-          # Loop through each region and list ECR repositories
-          for region in $regions; do
-          echo "Listing ECR repositories in $region..."
-          aws ecr describe-repositories --region $region --query 'repositories[*].[repositoryName, repositoryUri]'
-          done
-
-          # Set the output for all ECR repositories
-          all_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
-          echo "::set-output name=all_repositories::$all_repositories"
-
+          echo "Listing ECR repositories..."
+          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'   
+          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
+     
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
@@ -179,11 +164,11 @@ jobs:
           image=${{ steps.identify-values-files.outputs.image }}
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
           # Retrieve ECR repositories list
-          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.all_repositories }}" | base64 -d)
+          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then
               echo "Checking overrideTag against ECR repositories..."
-              if echo "$all_repositories" | grep -q "$overrideTag"; then
+              if echo "$ecr_repositories" | grep -q "$overrideTag"; then
                   echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
                   echo "Pairing image with overrideTag..."
                   echo "Image: $image, OverrideTag: $overrideTag"
@@ -193,7 +178,7 @@ jobs:
               fi
           fi
           # Check if latestTag exists in ECR repositories
-          if echo "$all_repositories" | grep -q "$latestTag"; then
+          if echo "$ecr_repositories" | grep -q "$latestTag"; then
               echo "LatestTag '$latestTag' found in ECR. Validation successful."
               echo "Pairing image with latestTag..."
               echo "Image: $image, LatestTag: $latestTag"

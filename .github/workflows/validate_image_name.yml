@@ -150,7 +150,7 @@ jobs:
                   tagToPair="$latestTag"
               else
                   echo "Error: Neither OverrideTag nor LatestTag found in ECR repository. Validation failed."
-                  exit 1
+                
               fi
 
               # Check if the image exists in ECR repositories

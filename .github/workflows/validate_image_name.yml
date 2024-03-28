@@ -133,16 +133,33 @@ jobs:
               echo "::set-output name=latestTag::$latestTag"
           fi
       
+      #- name: List ECR Repositories
+       # run: |
+          #echo "Listing ECR repositories in us-east-1..."
+          #aws ecr describe-repositories --region us-east-1 --query 'repositories[*].[repositoryName, repositoryUri]'  
+          #echo "Listing ECR repositories in us-west-1..."
+          #aws ecr describe-repositories --region us-west-1 --query 'repositories[*].[repositoryName, repositoryUri]'  
+          #echo "Listing ECR repositories..."
+          #all_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
+          #echo "::set-output name=ecr_repositories::$all_repositories"
+
       - name: List ECR Repositories
         run: |
-          echo "Listing ECR repositories in us-east-1..."
-          aws ecr describe-repositories --region us-east-1 --query 'repositories[*].[repositoryName, repositoryUri]'  
-          echo "Listing ECR repositories in us-west-1..."
-          aws ecr describe-repositories --region us-west-1 --query 'repositories[*].[repositoryName, repositoryUri]'  
-          echo "Listing ECR repositories..."
+          echo "Listing ECR repositories from images..."
+          # Get the images from the output
+          images=$(echo "${{ steps.extract-images.outputs.images }}")
+ 
+          # Extract the regions from the image URIs
+          regions=$(echo "$images" | grep -oE 'ecr\.[a-z0-9\-]+\.amazonaws\.com' | cut -d'.' -f2 | sort -u)
+          
+          # Loop through each region and list ECR repositories
+          for region in $regions; do
+          echo "Listing ECR repositories in $region..."
+          aws ecr describe-repositories --region $region --query 'repositories[*].[repositoryName, repositoryUri]'
+          done
+          # Set the output for all ECR repositories
           all_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
           echo "::set-output name=ecr_repositories::$all_repositories"
-
 
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}

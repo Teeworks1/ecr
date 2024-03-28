@@ -24,18 +24,18 @@ spec:
 --- 
 latestTag: 4847484930344738
   replicas: 3  
-  
+
 
 spec:
   containers:
 image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar:4847484930344738
-#overrideTag: e2878978974897897098947848
+
 
 latestTag: 4847484930344738
   replicas: 3
 spec:
   containers:
 image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar:4847484930344738
-#overrideTag: e2878978974897897098947848
+
 ---
 

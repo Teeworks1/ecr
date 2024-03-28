@@ -148,7 +148,7 @@ jobs:
          # echo "Listing ECR repositories..."
          # aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  
          # echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
-      - name: List ECR Repositories
+      - name: List ECR Repos
         run: |
           echo "Listing ECR repositories from images..."
           # Get the images from the output

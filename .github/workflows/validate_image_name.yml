@@ -126,7 +126,7 @@ jobs:
         run: |
           echo "Listing ECR repositories..."
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'
-          echo "::set-output name=ecr_repositories::$(aws ecr describe-images --query 'repositories[*].[repositoryName, repositoryUri, image[*]' --output table)"
+          echo "::set-output name=ecr_repositories::$(aws ecr describe-images --query 'repositories[*].[repositoryName, repositoryUri, imageTags[*]]' --output table)"
 
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}

@@ -179,7 +179,7 @@ jobs:
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then
               echo "Checking overrideTag against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$overrideTag"; then
+              if echo "$all_repositories" | grep -q "$overrideTag"; then
                   echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
                   echo "Pairing image with overrideTag..."
                   echo "Image: $image, OverrideTag: $overrideTag"
@@ -189,7 +189,7 @@ jobs:
               fi
           fi
           # Check if latestTag exists in ECR repositories
-          if echo "$ecr_repositories" | grep -q "$latestTag"; then
+          if echo "$all_repositories" | grep -q "$latestTag"; then
               echo "LatestTag '$latestTag' found in ECR. Validation successful."
               echo "Pairing image with latestTag..."
               echo "Image: $image, LatestTag: $latestTag"

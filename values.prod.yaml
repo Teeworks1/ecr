@@ -28,6 +28,7 @@ ws-flink-service:
     kubernetes.taskmanager.cpu.limit-factor: "5.0"
     kubernetes.jobmanager.cpu.limit-factor: "5.0"
 
+
   jobs:
     - name: book-value-calc
       image: 526316940316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-flink-jobs-book-value-calculator

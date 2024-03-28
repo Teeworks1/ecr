@@ -1,23 +1,13 @@
 ---
 global:
   latestTag: 3594a2292cb5d74c0705173d881559a6724ff503
-  
-spec:
-  containers :
-  - name: nginx
-    #image: nginx
-
 
 spec:
   containers:
-image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar:4847484930344738
+    - name: nginx
+      image: nginx
 
-latestTag: 4847484930344738
-  replicas: 3
-spec:
-  containers:
-image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar:4847484930344738
-
-
----
-
+    - name: another-container
+      image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar:4847484930344738
+      latestTag: 4847484930344738
+      replicas: 3

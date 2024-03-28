@@ -103,7 +103,7 @@ ws-flink-service:
       parallelism: 1
 
     - name: cash-positions-calc
-      #image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction:latest
+      image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction:latest
       entryClass: com.wealthsimple.accountingflinkjobs.cashpositions.MainKt
       flinkVersion: v1_14
       ephemeralVolume:

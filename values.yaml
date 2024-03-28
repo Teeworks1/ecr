@@ -1,3 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    ports:
+    - containerPort: 80
+---
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: nginx
+  namespace: pod-space
+  label:
+    app: nginx
+    tier: frontend
+spec:
+  containers :
+  - name: nginx
+    image: nginx
+---
+
 #latestTag: 4847484930344738
   #replicas: 3
 
@@ -14,3 +39,4 @@
   containers:
 #image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar:4847484930344738
 #overrideTag: e2878978974897897098947848
+---

@@ -159,7 +159,7 @@ jobs:
           done
           # Set the output for all ECR repositories
           all_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
-        #echo "::set-output name=ecr_repositories::$all_repositories"
+         #echo "::set-output name=ecr_repositories::$all_repositories"
           echo "name=ecr_repositories::$all_repositories" >> $GITHUB_OUTPUT
 
       - name: Check Overrides and Validate Image Tags in ECR

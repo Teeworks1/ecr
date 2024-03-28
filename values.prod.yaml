@@ -4,7 +4,6 @@ global:
   latestTag: 3594a2292cb5d74c0705173d881559a6724ff503
   overrideTag: 3374644783947859606776966857fff554feeh
   
-
   app:
     name: accounting-flink-jobs
     env: production

@@ -165,8 +165,7 @@ jobs:
 
           # Set the output for all ECR repositories
           all_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
-          echo "::set-output name=ecr_repositories::$all_repositories"
-
+          echo "::set-output name=all_repositories::$all_repositories"
 
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
@@ -176,7 +175,7 @@ jobs:
           image=${{ steps.identify-values-files.outputs.image }}
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
           # Retrieve ECR repositories list
-          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
+          ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.all_repositories }}" | base64 -d)
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then
               echo "Checking overrideTag against ECR repositories..."

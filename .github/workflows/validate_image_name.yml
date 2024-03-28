@@ -33,11 +33,11 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-          
+
       - name: Extract Account ID and Region
         id: extract_info
         run: |
-          registry_uri=$(yq e '.image.repository' values*.yaml)
+          registry_uri=$(yq e '.image' values*.yaml)
           echo "::set-output name=account_id::$(echo $registry_uri | cut -d'.' -f1)"
           echo "::set-output name=region::$(echo $registry_uri | cut -d'.' -f4)"
 

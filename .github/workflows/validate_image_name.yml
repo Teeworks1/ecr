@@ -158,7 +158,7 @@ jobs:
           else
               # If neither overrideTag nor latestTag are found, exit with failure
               echo "Error: Neither OverrideTag nor LatestTag provided. Validation failed"
-
+            fi
       - name: Display Validation Result
         run: |
           if [ $? -eq 0 ]; then

@@ -23,8 +23,7 @@ spec:
     image: nginx
 --- 
 latestTag: 4847484930344738
-  replicas: 3
-   
+  replicas: 3  
 spec:
   containers:
 image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar:4847484930344738

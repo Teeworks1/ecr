@@ -41,11 +41,9 @@ jobs:
         id: identify-values-files
         run: |
           #!/bin/bash
-
           # Search for values*.yaml files in the current directory and all subdirectories
           echo "Searching for values*.yaml files..."
           values_files=$(find . -type f -name "values*.yaml")
-
           # Check if any values*.yaml files were found
           if [ -z "$values_files" ]; then
               echo "No values*.yaml files found."
@@ -70,6 +68,7 @@ jobs:
                   # Check if image exists
                   if [[ $line =~ image:\ (.+) ]]; then
                       image="${BASH_REMATCH[1]}"
+                      processed_images+=("$image")
                       echo "Image: $image"
                       # Pair image with overrideTag
                       if [[ -n "$overrideTag" ]]; then
@@ -119,6 +118,7 @@ jobs:
           # Output the values to be used by the next steps
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=latestTag::$latestTag"
+          echo "::set-output name=image::$image"
 
       - name: List ECR Repositories
         id: list-ecr-repos

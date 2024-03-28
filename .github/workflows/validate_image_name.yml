@@ -117,6 +117,7 @@ jobs:
 
           # Output the values to be used by the next steps
           echo "::set-output name=overrideTag::$overrideTag"
+           echo "::set-output name=values_files::$values_files"
           echo "::set-output name=latestTag::$latestTag"
           echo "::set-output name=image::$image"
 

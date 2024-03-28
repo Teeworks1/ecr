@@ -21,7 +21,7 @@ spec:
   containers :
   - name: nginx
     image: nginx
----
+--- 
 latestTag: 4847484930344738
   replicas: 3
    

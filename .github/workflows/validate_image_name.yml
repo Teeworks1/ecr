@@ -12,9 +12,6 @@ jobs:
   validate_image_tags:
     name: Validate Image Tags
     runs-on: ubuntu-latest
-  
-  
-    #if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' && contains(github.event.head_commit.modified, 'values') }}
 
     steps:
       - name: Checkout Pull Request
@@ -28,7 +25,7 @@ jobs:
           path: |
             path/to/cache-directory
           key: ${{ runner.os }}-build-${{ hashFiles('**/values*.yaml') }}
-      
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -38,18 +35,6 @@ jobs:
 
       - name: Login to Amazon ECR in us-east-1
         uses: aws-actions/amazon-ecr-login@v2
-       
-      #- name: Configure AWS Credentials for Region 2
-        #uses: aws-actions/configure-aws-credentials@v4
-        #with:
-          #aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_REGION_2 }}
-          #aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_REGION_2 }}
-         # aws-region: us-west-1
-
-      #- name: Login to Amazon ECR
-        #uses: aws-actions/amazon-ecr-login@v2
-        #with:
-          #region: us-east-1
 
       - name: Identify Values Files
         id: identify-values-files
@@ -134,28 +119,13 @@ jobs:
           if [[ -z "$overrideTag" ]]; then
               echo "::set-output name=latestTag::$latestTag"
           fi
-      
-      #- name: List ECR Repositories
-       # run: |
-          #echo "Listing ECR repositories in us-east-1..."
-          #aws ecr describe-repositories --region us-east-1 --query 'repositories[*].[repositoryName, repositoryUri]'  
-          #echo "Listing ECR repositories in us-west-1..."
-          #aws ecr describe-repositories --region us-west-1 --query 'repositories[*].[repositoryName, repositoryUri]'  
-          #echo "Listing ECR repositories..."
-          #all_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
-          #echo "::set-output name=ecr_repositories::$all_repositories"
 
-      #- name: List ECR Repositories
-        #run: |
-         # echo "Listing ECR repositories..."
-         # aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  
-         # echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."
-          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'   
+          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'
           echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
-     
+
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
@@ -165,40 +135,29 @@ jobs:
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
           # Retrieve ECR repositories list
           ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
-          # Check if overrideTag exists in ECR repositories
-          if [[ -n "$overrideTag" ]]; then
-              echo "Checking overrideTag against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$overrideTag"; then
+          # Check if overrideTag or latestTag exists in ECR repositories
+          if [[ -n "$overrideTag" || -n "$latestTag" ]]; then
+              echo "Checking overrideTag/latestTag against ECR repositories..."
+              tagToPair=""
+              if [[ -n "$overrideTag" && echo "$ecr_repositories" | grep -q "$overrideTag" ]]; then
                   echo "OverrideTag '$overrideTag' found in ECR. Validation successful."
-                  echo "Pairing image with overrideTag..."
-                  echo "Image: $image, OverrideTag: $overrideTag"
-                  exit 0
+                  tagToPair="$overrideTag"
+              elif [[ -n "$latestTag" && echo "$ecr_repositories" | grep -q "$latestTag" ]]; then
+                  echo "LatestTag '$latestTag' found in ECR. Validation successful."
+                  tagToPair="$latestTag"
               else
-                  echo "Error: OverrideTag '$overrideTag' not found in ECR repository. Validation failed."
+                  echo "Error: Neither OverrideTag nor LatestTag found in ECR repository. Validation failed."
+                  exit 1
               fi
-          fi
-          # Check if image exists in ECR repositories
-          if [[ -n "$image" ]]; then
-              echo "Checking image against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$image"; then
-                  echo "image '$image' found in ECR. Validation successful."
-                  echo "image to be paired with overrideTag or latestTag..."
-                  #echo "Image: $image, OverrideTag: $overrideTag"
-                  exit 0
-              else
-                  echo "Error: image '$image' not found in ECR repository. Validation failed."
-              fi
-          fi
-          # Check if latestTag exists in ECR repositories
-          if echo "$ecr_repositories" | grep -q "$latestTag"; then
-              echo "LatestTag '$latestTag' found in ECR. Validation successful."
-              echo "Pairing image with latestTag..."
-              echo "Image: $image, LatestTag: $latestTag"
+              # Pair image with tag (overrideTag or latestTag)
+              echo "Pairing image with $tagToPair..."
+              echo "Image: $image, Tag: $tagToPair"
+              # Exit with success
+              exit 0
           else
-              echo "Error: LatestTag '$latestTag' not found in ECR repository. Validation failed."
-              exit 1
-          fi
-          
+              # If neither overrideTag nor latestTag are found, exit with failure
+              echo "Error: Neither OverrideTag nor LatestTag provided. Validation failed
+
       - name: Display Validation Result
         run: |
           if [ $? -eq 0 ]; then

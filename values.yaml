@@ -6,7 +6,6 @@ spec:
   containers :
   - name: nginx
     #image: nginx
-
 spec:
   containers:
 image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar:4847484930344738

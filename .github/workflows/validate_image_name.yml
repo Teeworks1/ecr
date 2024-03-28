@@ -39,6 +39,16 @@ jobs:
       - name: Login to Amazon ECR in us-east-1
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Configure AWS Credentials for Region 2
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_REGION_2 }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_REGION_2 }}
+          aws-region: us-west-1
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Identify Values Files
         id: identify-values-files
         run: |

@@ -3,9 +3,8 @@ latestTag: 4847484930344738
 
 spec:
   containers:
-image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar
-latestTag: 4757584648944746ffdhfg7847465
-
+image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar:
+latestTag: 4847484930344738
 env:
   replicas: 3
 
@@ -20,6 +19,6 @@ containers:
 image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar:4847484930344738
 
 
-latestTag: 4757584648944746ffdhfg7847465
+latestTag: 4847484930344738
 
 

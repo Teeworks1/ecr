@@ -1,4 +1,3 @@
----
 name: ECR Image Tag Validation
 
 on:
@@ -41,64 +40,60 @@ jobs:
         id: identify-values-files
         run: |
           #!/bin/bash
-          # Search for values*.yaml files in the current directory and all subdirectories
+
           echo "Searching for values*.yaml files..."
           values_files=$(find . -type f -name "values*.yaml")
-          # Check if any values*.yaml files were found
+
           if [ -n "$values_files" ]; then
               echo "Values*.yaml files found:"
               echo "$values_files"
-              # Set an output for values files found
               echo "::set-output name=values_files::$values_files"
           else
               echo "No values*.yaml files found."
               exit 1
           fi
-          # Initialize variables for overrideTag, image, and latestTag
+
           overrideTag=""
           image=""
           latestTag=""
-          # Extract overrideTag, image, and latestTag fields from values*.yaml files
+
           for file in $values_files; do
               echo "Processing $file..."
               while IFS= read -r line; do
-                  # Check if overrideTag exists
-                  if [[ $line =~ overrideTag:\ (.+) ]]; then
-                      overrideTag="${BASH_REMATCH[1]}"
-                      echo "OverrideTag: $overrideTag"
-                      #continue
-                  fi
-                  # Check if image exists
                   if [[ $line =~ image:\ (.+) ]]; then
                       image="${BASH_REMATCH[1]}"
                       echo "Image: $image"
                   fi
-                  # Check if latestTag exists only if overrideTag is not found
-                  if [[ -z "$overrideTag" && $line =~ latestTag:\ (.+) ]]; then
-                      latestTag="${BASH_REMATCH[1]}"
-                      echo "Latest Tag: $latestTag"
+                  if [[ $line =~ overrideTag:\ (.+) ]]; then
+                      overrideTag="${BASH_REMATCH[1]}"
+                      echo "OverrideTag: $overrideTag"
                   fi
               done < "$file"
-              # Check if overrideTag and image(s) are found, if not, break the loop and look for latestTag
-              if [[ -n "$overrideTag" && -n "$image" ]]; then
+              if [[ -n "$image" && -n "$overrideTag" ]]; then
                   break
               fi
           done
-          # Check if overrideTag and image(s) are found, if not, echo that latestTag will be checked
-          if [[ -z "$overrideTag" && -z "$image" ]]; then
-              echo "OverrideTag and image(s) not found. Checking for latestTag..."
+
+          if [[ -z "$overrideTag" ]]; then
+              echo "OverrideTag not found. Checking for latestTag..."
+              for file in $values_files; do
+                  echo "Processing $file..."
+                  while IFS= read -r line; do
+                      if [[ $line =~ latestTag:\ (.+) ]]; then
+                          latestTag="${BASH_REMATCH[1]}"
+                          echo "Latest Tag: $latestTag"
+                          break
+                      fi
+                  done < "$file"
+                  if [[ -n "$latestTag" ]]; then
+                      break
+                  fi
+              done
           fi
-          
-              # Output the images
-              echo "::set-output name=images::${images[*]}"
-          fi
-          # Output the values to be used by the next steps
+
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=image::$image"
-          # Output latestTag only if overrideTag is not found
-          if [[ -z "$overrideTag" ]]; then
-              echo "::set-output name=latestTag::$latestTag"
-          fi
+          echo "::set-output name=latestTag::$latestTag"
 
       - name: List ECR Repositories
         id: list-ecr-repos
@@ -110,14 +105,11 @@ jobs:
       - name: Check Overrides and Validate Image Tags in ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
-          # Retrieve values from previous step outputs
           overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
           latestTag=${{ steps.identify-values-files.outputs.latestTag }}
           image=${{ steps.identify-values-files.outputs.image }}
-          # Retrieve ECR repositories list
           ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}")
 
-          # Check if overrideTag or latestTag exists in ECR repositories
           if [[ -n "$overrideTag" || -n "$latestTag" ]]; then
               echo "Checking overrideTag/latestTag against ECR repositories..."
               tagToPair=""
@@ -129,10 +121,8 @@ jobs:
                   tagToPair="$latestTag"
               else
                   echo "Error: Neither OverrideTag nor LatestTag found in ECR repository. Validation failed."
-                
               fi
 
-              # Check if the image exists in ECR repositories
               if [[ $(echo "$ecr_repositories" | grep -q "$image") ]]; then
                   echo "Image '$image' found in ECR. Pairing with $tagToPair..."
                   echo "Image: $image, Tag: $tagToPair"
@@ -141,13 +131,12 @@ jobs:
                   exit 1
               fi
 
-              # Exit with success
               exit 0
           else
-              # If neither overrideTag nor latestTag are found, exit with failure
               echo "Error: Neither OverrideTag nor LatestTag provided. Validation failed."
               exit 1
           fi
+
       - name: Display Validation Result
         run: |
           if [ $? -eq 0 ]; then

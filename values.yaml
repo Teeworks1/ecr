@@ -10,5 +10,4 @@ spec:
     - name: another-container
       image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar
       latestTag: 4847484930344738
-      replicas: 3
-
+      replicas: 2

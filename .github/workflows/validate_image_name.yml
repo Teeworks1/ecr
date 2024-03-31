@@ -33,9 +33,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Login to Amazon ECR in us-east-1
-        uses: aws-actions/amazon-ecr-login@v2
-
       - name: Identify Values Files
         id: identify-values-files
         run: |
@@ -82,7 +79,7 @@ jobs:
                       if [[ $line =~ latestTag:\ (.+) ]]; then
                           latestTag="${BASH_REMATCH[1]}"
                           echo "Latest Tag: $latestTag"
-                          break
+                          break 
                       fi
                   done < "$file"
                   if [[ -n "$latestTag" ]]; then
@@ -95,6 +92,13 @@ jobs:
           echo "::set-output name=image::$image"
           echo "::set-output name=latestTag::$latestTag"
 
+      - name: Login to Amazon ECR
+        run: |
+           image_uri="${{ steps.identify-values-files.outputs.image }}"
+           account_id=$(echo "$image_uri" | cut -d'.' -f1)
+           region=$(echo "$image_uri" | cut -d'.' -f4)
+           aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
+           
       - name: List ECR Repositories
         id: list-ecr-repos
         run: |

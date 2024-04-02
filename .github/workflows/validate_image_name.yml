@@ -52,7 +52,7 @@ jobs:
               echo "No values*.yaml files found."
               exit 1
           fi
-
+          
           overrideTag=""
           image=""
           latestTags=()
@@ -93,7 +93,7 @@ jobs:
       - name: Debug Step Output
         run: |
           echo "Identify Values Files output: ${{ steps.identify-values-files.outputs.values_files }}"
-  
+
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."

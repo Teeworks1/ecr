@@ -4,8 +4,6 @@ global:
 
 spec:
   containers:
-    - name: nginx
-      image: nginx
 
     - name: another-container
       image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/bar

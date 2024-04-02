@@ -40,6 +40,7 @@ jobs:
         id: identify-values-files
         run: |
           #!/bin/bash
+
           echo "Searching for values*.yaml files..."
           values_files=$(find . -type f -name "values*.yaml")
 
@@ -68,7 +69,7 @@ jobs:
                       echo "Override Tag: $overrideTag"
                       echo "Image: $image"
                       # If overrideTag is found, no need to search for latestTag
-                      latestTag=()  # Clearing the latestTags array
+                      latestTags=()  # Clearing the latestTags array
                       continue
                   fi
                   if [[ $line =~ latestTag:\ (.+) ]]; then
@@ -84,7 +85,6 @@ jobs:
                   break
               fi
           done
-
           # Set outputs
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=image::$image"
@@ -138,29 +138,3 @@ jobs:
           else
               echo  "Validation failed. There are issues with the image tags."
           fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

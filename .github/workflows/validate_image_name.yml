@@ -94,11 +94,14 @@ jobs:
 
       - name: Login to Amazon ECR
         run: |
-           image_uri="${{ steps.identify-values-files.outputs.image }}"
-           account_id=$(echo "$image_uri" | cut -d'.' -f1)
-           region=$(echo "$image_uri" | cut -d'.' -f4)
-           aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
-           
+           images=$(yq eval-all '.image' ${{ steps.identify-values-files.outputs.values_files }})
+            for image_uri in $images; do
+              account_id=$(echo "$image_uri" | cut -d'.' -f1)
+              region=$(echo "$image_uri" | cut -d'.' -f4)   
+              echo "Logging in to Amazon ECR for image: $image_uri"
+              aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
+           done
+    
       - name: List ECR Repositories
         id: list-ecr-repos
         run: |
@@ -148,4 +151,3 @@ jobs:
           else
               echo  "Validation failed. There are issues with the image tags."
           fi
-

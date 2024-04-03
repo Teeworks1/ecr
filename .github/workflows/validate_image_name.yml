@@ -33,8 +33,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+      #- name: Login to Amazon ECR
+        #uses: aws-actions/amazon-ecr-login@v2
 
       - name: Identify Values Files
         id: identify-values-files
@@ -89,7 +89,17 @@ jobs:
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=image::$image"
           echo "::set-output name=latestTags::$latestTag"
-
+      
+      - name: Login to Amazon ECR
+        run: |
+           images=$(yq eval-all '.image' ${{ steps.identify-values-files.outputs.values_files }})
+            for image_uri in $images; do
+              account_id=$(echo "$image_uri" | cut -d'.' -f1)
+              region=$(echo "$image_uri" | cut -d'.' -f4)   
+              echo "Logging in to Amazon ECR for image: $image_uri"
+              aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
+           done
+           
       - name: Debug Step Output
         run: |
           echo "Identify Values Files output: ${{ steps.identify-values-files.outputs.values_files }}"
@@ -121,7 +131,6 @@ jobs:
               echo "Image '$image' not found in ECR."
             fi
           fi
-
           if [[ -n "$overrideTag" ]]; then
             echo "Checking overrideTag against ECR repositories..."
             if echo "$ecr_repositories" | grep -q "$overrideTag"; then
@@ -130,7 +139,6 @@ jobs:
               echo "OverrideTag '$overrideTag' not found in ECR."  
             fi
           fi
-
           if [[ -n "$latestTags" ]]; then
             for tag in $latestTags; do
               echo "Checking latestTag '$tag' against ECR repositories..."

@@ -104,42 +104,47 @@ jobs:
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
           # Retrieve values from previous step outputs
-          overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
-          image=${{ steps.identify-values-files.outputs.image }}
-          latestTag=${{ steps.identify-values-files.outputs.latestTag }}
-          # Retrieve ECR repositories list
+          values_files="${{ steps.identify-values-files.outputs.values_files }}"
           ecr_repositories=$(echo "${{ steps.list-ecr-repos.outputs.ecr_repositories }}" | base64 -d)
 
-          # Check if images exist in ECR repositories
-          for uri in "${images[@]}"; do
-            if echo "$ecr_repositories" | grep -q "$uri"; then
-              echo "Image '$uri' found in ECR."
+          # Retrieve values from previous step outputs
+          overrideTag=${{ steps.identify-values-files.outputs.overrideTag }}
+          image=${{ steps.identify-values-files.outputs.image }}
+          latestTags="${{ steps.identify-values-files.outputs.latestTags }}"
+
+          # Check if image, overrideTag, or latestTags exist in ECR repositories
+          if [[ -n "$image" ]]; then
+            echo "Checking image against ECR repositories..."
+            if echo "$ecr_repositories" | grep -q "$image"; then
+              echo "Image '$image' found in ECR."
+            else
+              echo "Image '$image' not found in ECR."
+              exit 1
             fi
-          done
-          # Check if overrideTag exists in ECR repositories
+          fi
+
           if [[ -n "$overrideTag" ]]; then
-              echo "Checking overrideTag against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$overrideTag"; then
-                  echo "OverrideTag '$overrideTag' found in ECR."
-              else
-                  echo "OverrideTag '$overrideTag' not found in ECR."  
-              fi
+            echo "Checking overrideTag against ECR repositories..."
+            if echo "$ecr_repositories" | grep -q "$overrideTag"; then
+              echo "OverrideTag '$overrideTag' found in ECR."
+            else
+              echo "OverrideTag '$overrideTag' not found in ECR."  
+              exit 1
+            fi
           fi
 
-          # Check if latestTag exists in ECR repositories
-          if [[ -n "$latestTag" ]]; then 
-              echo "Checking latestTag against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$latestTag"; then
-                  echo "LatestTag '$latestTag' found in ECR."
+          if [[ -n "$latestTags" ]]; then
+            for tag in $latestTags; do
+              echo "Checking latestTag '$tag' against ECR repositories..."
+              if echo "$ecr_repositories" | grep -q "$tag"; then
+                echo "LatestTag '$tag' found in ECR."
               else
-                  echo "LatestTag '$latestTag' not found in ECR."
+                echo "LatestTag '$tag' not found in ECR."
+                exit 1
               fi
+            done
           fi
-
-          # Check if none of the tags are found in ECR repositories
-          if [[ -z "$overrideTag" && -z "$latestTag" && "${#images[@]}" -eq 0 ]]; then
-              echo "LatestTag, Images, or OverrideTag not found in ECR."
-          fi 
+ 
       - name: Display Validation Result
         run: |
           if [ $? -eq 0 ]; then

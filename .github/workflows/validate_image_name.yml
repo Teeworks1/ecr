@@ -108,7 +108,18 @@ jobs:
           echo "Listing ECR repositories..."
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  
           echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
-    
+     
+      - name: Describe Images per Repository
+        run: |
+          ecr_repositories="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
+          # Loop through each repository in ecr_repositories and describe images
+          while IFS= read -r repo; do
+            repo_name=$(echo "$repo" | cut -f1)
+            repo_uri=$(echo "$repo" | cut -f2)
+            echo "Describing images for repository: $repo_name ($repo_uri)"
+            aws ecr describe-images --repository-name "$repo_name"
+          done <<< "$ecr_repositories
+
       - name: Check ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |

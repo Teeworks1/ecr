@@ -101,7 +101,6 @@ ws-flink-service:
           memory: 8192m
       numberOfTaskSlots: 1
       parallelism: 1
-
     - name: cash-positions-calc
       image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction
       entryClass: com.wealthsimple.accountingflinkjobs.cashpositions.MainKt

@@ -19,6 +19,7 @@ global:
       flinkConfiguration:
         io.tmp.dirs: '/opt/flink/data'
         state.backend.rocksdb.checkpoint.transfer.thread.num: "8"
+    
      
     - name: database-shovel
       image: 5337833900940316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-flink-jobs-database-shovel

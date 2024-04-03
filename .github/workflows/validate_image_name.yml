@@ -116,7 +116,6 @@ jobs:
               echo "Image '$uri' found in ECR."
             fi
           done
-
           # Check if overrideTag exists in ECR repositories
           if [[ -n "$overrideTag" ]]; then
               echo "Checking overrideTag against ECR repositories..."

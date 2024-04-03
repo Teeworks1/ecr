@@ -34,7 +34,7 @@ jobs:
           aws-region: us-east-1
       
       #- name: Login to Amazon ECR
-        #uses: aws-actions/amazon-ecr-login@v2
+      #  uses: aws-actions/amazon-ecr-login@v2
 
       - name: Identify Values Files
         id: identify-values-files
@@ -93,13 +93,13 @@ jobs:
       - name: Login to Amazon ECR
         run: |
            images=$(yq eval-all '.image' ${{ steps.identify-values-files.outputs.values_files }})
-            for image_uri in $images; do
-              account_id=$(echo "$image_uri" | cut -d'.' -f1)
-              region=$(echo "$image_uri" | cut -d'.' -f4)   
-              echo "Logging in to Amazon ECR for image: $image_uri"
-              aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
+           for image_uri in $images; do
+             account_id=$(echo "$image_uri" | cut -d'.' -f1)
+             region=$(echo "$image_uri" | cut -d'.' -f4)   
+             echo "Logging in to Amazon ECR for image: $image_uri"
+             aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
            done
-           
+
       - name: Debug Step Output
         run: |
           echo "Identify Values Files output: ${{ steps.identify-values-files.outputs.values_files }}"
@@ -110,7 +110,7 @@ jobs:
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  
           echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
     
-      - name: Check OverridesTag and LatestTags in ECR
+      - name: Check ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
           # Retrieve values from previous step outputs
@@ -149,11 +149,14 @@ jobs:
               fi
             done
           fi
- 
+
       - name: Display Validation Result
+        if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
-          if [ $? -eq 0 ]; then
-              echo "Validation successful. All image tags are valid."
+          # Check if the image, overrideTag, or latestTags are found in the ECR repository
+          if [[ -n "${{ steps.check-ecr.outputs.imageFound }}" || -n "${{ steps.check-ecr.outputs.overrideTagFound }}" || -n "${{ steps.check-ecr.outputs.latestTagFound }}" ]]; then
+            echo "Validation successful. Image, overrideTag, or latestTags found in ECR."
           else
-              echo  "Validation failed. There are issues with the image tags."
+            echo "Validation failed. Image, overrideTag, and latestTags not found in ECR."
+            exit 1
           fi

@@ -35,7 +35,6 @@ jobs:
       
       #- name: Login to Amazon ECR
       #  uses: aws-actions/amazon-ecr-login@v2
-
       - name: Identify Values Files
         id: identify-values-files
         run: |
@@ -88,28 +87,31 @@ jobs:
           # Set outputs
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=image::$image"
-          echo "::set-output name=latestTags::$latestTag"
-      
+          echo "::set-output name=latestTags::$latestTag"  
       - name: Login to Amazon ECR
         run: |
-           images=$(yq eval-all '.image' ${{ steps.identify-values-files.outputs.values_files }})
-           for image_uri in $images; do
-             account_id=$(echo "$image_uri" | cut -d'.' -f1)
-             region=$(echo "$image_uri" | cut -d'.' -f4)   
-             echo "Logging in to Amazon ECR for image: $image_uri"
-             aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
-           done
-
+          for file in $values_files; do
+              echo "Processing $file..."
+              # Use awk to filter out special characters
+              # Here, we're assuming that the image lines start with 'image: ' and then contain the image URI
+              # Adjust this pattern according to your YAML file's structure
+              awk '/image:/ {gsub(/[^[:alnum:]._-]/, "", $2); print $2}' "$file" | while read -r image_uri; do
+                  if [ -n "$image_uri" ]; then
+                      account_id=$(echo "$image_uri" | cut -d'.' -f1)
+                      region=$(echo "$image_uri" | cut -d'.' -f4)
+                      echo "Logging in to Amazon ECR for image: $image_uri"
+                      aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
+                  fi
+              done
+          done
       - name: Debug Step Output
         run: |
           echo "Identify Values Files output: ${{ steps.identify-values-files.outputs.values_files }}"
-
       - name: List ECR Repositories
         run: |
           echo "Listing ECR repositories..."
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  
-          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
-    
+          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"  
       - name: Check ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
@@ -149,7 +151,6 @@ jobs:
               fi
             done
           fi
-
       - name: Display Validation Result
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |

@@ -120,3 +120,45 @@ ws-flink-service:
       flinkConfiguration:
         io.tmp.dirs: '/opt/flink/data'
         state.backend.rocksdb.checkpoint.transfer.thread.num: "8"
+
+  app:
+    env: internal
+    name: bullybot
+
+ws-service:
+  image: 526316940316.dkr.ecr.us-east-1.amazonaws.com/wealthsimple/bullybot
+  memory: 2048Mi
+  cpu: 250m
+
+  secrets:
+    files:
+      create: true
+
+  volumes:
+    - name: bullybot-files
+      secret:
+        secretName: bullybot-files
+
+  deployments:
+    - args:
+        - ddtrace-run
+        - gunicorn
+        - --workers=4
+        - --bind=0.0.0.0:4000
+        - app.app:app
+      healthCheckUri: /healthcheck
+      name: bullybot
+      port: '4000'
+      ingress: 'private'
+      volumeMounts:
+        - name: bullybot-files
+          mountPath: /usr/src/app/google-service-account-private-key.pem.yaml
+          # This is the secret name from SSM path /<cluster>/eks/bullybot/files/google-service-account-private-key
+          subPath: google-service-account-private-key
+
+  env:
+    APP_ENV: production
+    DATADOG_ENV: production
+    DATADOG_SERVICE_NAME: bullybot
+    DD_STATSD_SOCKET_PATH: /var/run/datadog/dsd.sock
+    SERVER_NAME: bullybot-k8s.iad.w10external.com

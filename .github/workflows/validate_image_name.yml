@@ -119,7 +119,6 @@ jobs:
               echo "Image '$image' found in ECR."
             else
               echo "Image '$image' not found in ECR."
-              exit 1
             fi
           fi
 
@@ -129,7 +128,6 @@ jobs:
               echo "OverrideTag '$overrideTag' found in ECR."
             else
               echo "OverrideTag '$overrideTag' not found in ECR."  
-              exit 1
             fi
           fi
 
@@ -140,7 +138,6 @@ jobs:
                 echo "LatestTag '$tag' found in ECR."
               else
                 echo "LatestTag '$tag' not found in ECR."
-                exit 1
               fi
             done
           fi

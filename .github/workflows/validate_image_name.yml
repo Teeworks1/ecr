@@ -91,20 +91,13 @@ jobs:
       
       - name: Login to Amazon ECR
         run: |
-          for file in $values_files; do
-              echo "Processing $file..."
-              # Use awk to filter out special characters
-              # Here, we're assuming that the image lines start with 'image: ' and then contain the image URI
-              # Adjust this pattern according to your YAML file's structure
-              awk '/image:/ {gsub(/[^[:alnum:]._-]/, "", $2); print $2}' "$file" | while read -r image_uri; do
-                  if [ -n "$image_uri" ]; then
-                      account_id=$(echo "$image_uri" | cut -d'.' -f1)
-                      region=$(echo "$image_uri" | cut -d'.' -f4)
-                      echo "Logging in to Amazon ECR for image: $image_uri"
-                      aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
-                  fi
-              done
-          done
+           images=$(yq eval-all '.image' ${{ steps.identify-values-files.outputs.values_files }})
+           for image_uri in $images; do
+             account_id=$(echo "$image_uri" | cut -d'.' -f1)
+             region=$(echo "$image_uri" | cut -d'.' -f4)   
+             echo "Logging in to Amazon ECR for image: $image_uri"
+             aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
+           done
 
       - name: Debug Step Output
         run: |

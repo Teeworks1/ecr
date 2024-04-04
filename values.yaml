@@ -19,8 +19,8 @@ global:
       flinkConfiguration:
         io.tmp.dirs: '/opt/flink/data'
         state.backend.rocksdb.checkpoint.transfer.thread.num: "8"
-    
-     
+
+
     - name: database-shovel
       image: 5337833900940316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-flink-jobs-database-shovel
       entryClass: com.wealthsimple.accountingflinkjobs.databaseshovel.MainKt
@@ -34,7 +34,7 @@ global:
       numberOfTaskSlots: 1
       parallelism: 1
     - name: cash-positions-calc
-      #mage: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction
+      image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction
       entryClass: com.wealthsimple.accountingflinkjobs.cashpositions.MainKt
       flinkVersion: v1_14
       ephemeralVolume:

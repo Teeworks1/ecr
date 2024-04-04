@@ -7,19 +7,18 @@ on:
   push:
     paths:
       - '**/values*.yaml'
-
 jobs:
   validate_image_tags:
     name: Validate Image Tags
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Pull Request
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Cache repository state
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             path/to/cache-directory
@@ -105,17 +104,14 @@ jobs:
                   fi
               done
           done
-
       - name: Debug Step Output
         run: |
           echo "Identify Values Files output: ${{ steps.identify-values-files.outputs.values_files }}"
-
       - name: List ECR Repos
         run: |
           echo "Listing ECR repositories..."
-          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'  
+          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'
           echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
-     
       - name: Describe Images per Repository
         run: |
           ecr_repositories="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
@@ -129,7 +125,6 @@ jobs:
               echo "Skipping empty repository name."
             fi
           done <<< "$ecr_repositories"
-
       - name: Check ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
@@ -169,7 +164,6 @@ jobs:
               fi
             done
           fi
-
       - name: Display Validation Result
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |

@@ -72,11 +72,11 @@
     echo "::set-output name=ecr_repositories::$ecr_repositories"
 
   ecr_repositories="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
-  while IFS=$'\t' read -r repo_name repo_uri; do
-    echo "Repo Name: $repo_name, Repo URI: $repo_uri"
-    if [ -n "$repo_name" ]; then
-      echo "Describing images for repository: $repo_name ($repo_uri)"
-      aws ecr describe-images --repository-name "$repo_name"
+  #while IFS=$'\t' read -r repo_name repo_uri; do
+    #echo "Repo Name: $repo_name, Repo URI: $repo_uri"
+    #if [ -n "$repo_name" ]; then
+      #echo "Describing images for repository: $repo_name ($repo_uri)"
+      aws ecr describe-images --repository-name githubaction
     else
       echo "Skipping empty repository name."
     fi

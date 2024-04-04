@@ -119,6 +119,7 @@ jobs:
       - name: Describe Images per Repository
         run: |
           ecr_repositories="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
+          echo "ecr_repositories: $ecr_repositories"  # Debugging output
           while IFS=$'\t' read -r repo_name repo_uri; do
             echo "Repo Name: $repo_name, Repo URI: $repo_uri"
             if [ -n "$repo_name" ]; then
@@ -168,6 +169,7 @@ jobs:
               fi
             done
           fi
+
       - name: Display Validation Result
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |

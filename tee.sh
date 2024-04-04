@@ -66,7 +66,7 @@
           done
 
      - name: List ECR Repos
-  run: |
+       run: |
     echo "Listing ECR repositories..."
     ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output text)
     echo "::set-output name=ecr_repositories::$ecr_repositories"
@@ -81,10 +81,8 @@
       echo "Skipping empty repository name."
     fi
   done <<< "$ecr_repositories"
-"
     else
       echo "Skipping empty repository name."
     fi
   done <<< "$ecr_repositories"
-
 

@@ -1,0 +1,174 @@
+---
+global:
+  app:
+    env: staging
+    name: financial-metrics-service
+  latestTag: 67b9d1277bb6590a716e3a69d5481f62af5a5c52
+ws-service:
+  memory: 1024Mi
+  cpu: 100m
+
+  env:
+    ACCOUNTS_API_BASE_PATH: "https://wealthsimple.staging.iad.wealthsimple.com"
+    ACCOUNT_SERVICE_BASE_URL: "https://wealthsimple.staging.iad.wealthsimple.com"
+    APP_ENV: "staging"
+    APP_NAME: "financial-metrics-service"
+    AUTH_API_BASE_PATH: "https://so-auth.staging.yul.wealthsimple.com"
+    AUTH_API_USERNAME: "holdings-svc"
+    AUTH_SERVICE_BASE_URL: "https://auth-service.staging.iad.wealthsimple.com"
+    AWS_REGION: "ca-central-1"
+    BALANCE_SERVICE_BASE_URL: "https://balance-service-api.staging.yul.wealthsimple.com"
+    BALANCE_SERVICE_CASH_BASE_URL: "https://balance-service-cash-api.staging.yul.wealthsimple.com"
+    BALANCE_SERVICE_CRYPTO_BASE_URL: "https://balance-service-crypto-api.staging.yul.wealthsimple.com"
+    BALANCE_SERVICE_INVEST_BASE_URL: "https://balance-service-invest-api.staging.yul.wealthsimple.com"
+    CLIENTS_GATEWAY_BASE_URL: "https://clients-gateway.staging.iad.wealthsimple.com"
+    CRYPTO_SERVICE_BASE_URL: "https://crypto-service.staging.iad.wealthsimple.com"
+    DATADOG_REPORTING_ENABLED: "true"
+    DD_AGENT_HOST: "datadog-agent.datadog-operator.svc.cluster.local"
+    DD_JMXFETCH_ENABLED: "true"
+    DD_MONITORING_ENABLED: "true"
+    DD_SERVICE_MAPPING: "postgresql:financial-metrics-service-postgres,graphql:fina\
+      ncial-metrics-service-graphql,redis:financial-metrics-service-redis"
+    DD_TRACE_GLOBAL_TAGS: "appname:financial-metrics-service,appenv:staging"
+    # DD_VERSION: "<LATEST_TAG>"  # TODO: Confirm this works
+    DIAGNOSTIC_LOGGING: "false"
+    FOREX_SERVICE_RATES_BASE_URL: "https://forex-service-rates-api.staging.iad.wealthsimple.com"
+    HEMINGWAY_SERVICE_BASE_URL: "https://hemingway-service.staging.iad.wealthsimple.com"
+    KRATOS_SERVICE_BASE_URL: "https://kratos.staging.yul.wealthsimple.com"
+    LOG4J_FORMAT_MSG_NO_LOOKUPS: "true"
+    ORDERS_API_BASE_PATH: "https://so-orders.staging.yul.wealthsimple.com"
+    POSEIDON_API_BASE_PATH: "https://poseidon.staging.iad.wealthsimple.com"
+    POSEIDON_BASE_URL: "https://poseidon.staging.iad.wealthsimple.com"
+    POSITIONS_API_BASE_PATH: "https://positions-api.staging.yul.wealthsimple.com"
+    REPORTING_METRIC_PREFIX: "financial_metrics_service"
+    REPORTING_STATSD_HOST: "datadog-agent.datadog-operator.svc.cluster.local"
+    REPORTING_TO_DATADOG_ENABLED: "true"
+    ROLLBAR_ENABLED: "false"
+    SECURITY_MASTER_ACCELERATOR_API_BASE_PATH: "https://security-master-accelerator.staging.iad.wealthsimple.com"
+    SECURITY_MASTER_API_BASE_PATH: "https://security-master-3.staging.iad.wealthsimple.com"
+    SENTRY_ENVIRONMENT: "staging"
+    # SENTRY_RELEASE: "<LATEST_TAG>" # TODO: Confirm this works
+    SO_POSITIONS_CLIENT_CONCURRENCY: "15"
+    SPRING_PROFILES_ACTIVE: "staging"
+  deployments:
+    - name: "financial-metrics-service" # This just becomes financial-metrics-service
+      image: "526316940316.dkr.ecr.us-east-1.amazonaws.com/wealthsimple/financial-met\
+        rics-service"
+      command: [ "java" ]
+      args:
+        - "-XX:OnOutOfMemoryError=./java-oom-datadog-publisher.sh"
+        - "-XX:MaxRAMPercentage=85"
+        - "-Xshare:off"
+        - "-javaagent:dd-java-agent.jar"
+        - "-Ddd.profiling.enabled=true"
+        - "-XX:FlightRecorderOptions=stackdepth=256"
+        - "-jar"
+        - "application.jar"
+      port: "8080"
+      healthCheckUri: "/health"
+      ingress: "private"
+      keda:
+        minReplicaCount: 2
+        maxReplicaCount: 4
+        triggers:
+          - type: "cpu"
+            value: "65"
+      envAdditions:
+        APP_NAME: "financial-metrics-service"
+        DD_TRACE_GLOBAL_TAGS: "appname:financial-metrics-service,appenv:staging"
+    - name: "api" # financial-metrics-service gets automatically prepended
+      image: "526316940316.dkr.ecr.us-east-1.amazonaws.com/wealthsimple/financial-met\
+        rics-service-api"
+      command: [ "java" ]
+      args:
+        - "-XX:OnOutOfMemoryError=./java-oom-datadog-publisher.sh"
+        - "-XX:MaxRAMPercentage=85"
+        - "-Xshare:off"
+        - "-javaagent:dd-java-agent.jar"
+        - "-Ddd.profiling.enabled=true"
+        - "-XX:FlightRecorderOptions=stackdepth=256"
+        - "-jar"
+        - "application.jar"
+      port: "8019"
+      healthCheckUri: "/health"
+      ingress: "private"
+      keda:
+        minReplicaCount: 2
+        maxReplicaCount: 4
+        triggers:
+          - type: "datadog"
+            metricType: "AverageValue"
+            query: "trace.netty.request.hits{env:staging, service:financial-metrics-service-api}.as_rate() / 25"
+            queryValue: "1"
+            age: "90" # Default
+      envAdditions:
+        APP_NAME: "financial-metrics-service-api"
+        DD_TRACE_GLOBAL_TAGS: "appname:financial-metrics-service-api,appenv:staging"
+    - name: "worker" # financial-metrics-service gets automatically prepended
+      image: "526316940316.dkr.ecr.us-east-1.amazonaws.com/wealthsimple/financial-met\
+        rics-service-worker"
+      command: [ "java" ]
+      args:
+        - "-XX:OnOutOfMemoryError=./java-oom-datadog-publisher.sh"
+        - "-Xmx778m"
+        - "-Xshare:off"
+        - "-javaagent:dd-java-agent.jar"
+        - "-Ddd.profiling.enabled=true"
+        - "-XX:FlightRecorderOptions=stackdepth=256"
+        - "-cp"
+        - "application.jar"
+        - "com.wealthsimple.holdings.worker.WorkerKt"
+      cpu: "500m"
+      ingress: "none"
+      envAdditions:
+        APP_NAME: "financial-metrics-service-worker"
+        DD_TRACE_GLOBAL_TAGS: "appname:financial-metrics-service-worker,appenv:staging,appjob:worker"
+
+redis-ha:
+  podAnnotations:
+    ad.datadoghq.com/redis.checks: |
+      {
+        "redisdb": {
+          "init_config": {},
+          "instances": [
+            {
+              "host": "%%host%%",
+              "port":"6379",
+              "password":"ENC[k8s_secret@financial-metrics-service/financial-metrics-service-env/_REDIS_PASSWORD]"
+            }
+          ]
+        }
+      }
+  labels:
+    tags.datadoghq.com/env: "staging"
+  redis:
+    config:
+      maxmemory: 512mb
+      maxmemory-policy: "volatile-ttl"
+    resources:
+      requests:
+        memory: 768Mi
+        cpu: 1000m
+      limits:
+        memory: 768Mi
+  haproxy:
+    enabled: true
+    podDistruptionBudget:
+      maxUnavailable: 1
+  auth: true
+  existingSecret: financial-metrics-service-env
+  authKey: _REDIS_PASSWORD
+  persistentVolume:
+    enabled: true
+    storageClass: "ebs-gp3"
+  podDisruptionBudget:
+    maxUnavailable: 1
+  latestTag: 3594847484930344738
+  overrideTag: 3374644783947859606776966857fff554feeh
+   - name: cash-positions-calc
+      image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction
+      entryClass: com.wealthsimple.accountingflinkjobs.cashpositions.MainKt
+      flinkVersion: v1_14
+      ephemeralVolume:
+        storageSize: '128Gi'
+        mountPath:

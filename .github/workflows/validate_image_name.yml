@@ -122,12 +122,12 @@ jobs:
         run: |
           echo "Listing ECR repositories..."
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'
-          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' -- output json)"
+          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)"
 
       - name: Describe Images per Repository
         run: |
           ecr_repositories="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
-          echo "ecr_repositories: $ecr_repositories" 
+          echo "ecr_repositories: $ecr_repositories"
 
           # Check if ecr_repositories is empty or not
           if [ -z "$ecr_repositories" ]; then
@@ -137,8 +137,8 @@ jobs:
 
           # Loop through each repository and describe images
           while IFS=$'\t' read -r repo_info; do
-            repo_name=$(echo "$repo_info" | cut -f1)
-            repo_uri=$(echo "$repo_info" | cut -f2)
+            repo_name=$(echo "$repo_info" | jq -r '.[0]')
+            repo_uri=$(echo "$repo_info" | jq -r '.[1]')
 
             # Skip if repository name is empty
             if [ -z "$repo_name" ]; then

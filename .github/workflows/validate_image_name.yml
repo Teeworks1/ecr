@@ -117,11 +117,13 @@ jobs:
                   fi
               done
           done
-       - name: List ECR Repos
-         run: |
+
+      - name: List ECR Repos
+        run: |
           echo "Listing ECR repositories..."
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'
           echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
+
       - name: Describe Images per Repository
         run: |
           ecr_repositories="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"

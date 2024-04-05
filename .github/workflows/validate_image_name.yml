@@ -140,4 +140,4 @@ jobs:
             fi
           done <<< "$ecr_repositories"
 
-      echo "Done."
+      #echo "Done."

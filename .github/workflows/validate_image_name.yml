@@ -129,8 +129,8 @@ jobs:
           ecr_repositories="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
           echo "ecr_repositories: $ecr_repositories" 
           while IFS= read -r repo_info; do
-            repo_name=$(echo "$repo_info" | cut -f1)
-            repo_uri=$(echo "$repo_info" | cut -f2)  # Correct variable name
+               repo_name=$(echo "$repo_info" | jq -r '.[0]')
+               repo_uri=$(echo "$repo_info" | jq -r '.[1]')
             echo "Describing images for repository: $repo_name ($repo_uri)"  # Corrected variable name
             if [ -n "$repo_name" ]; then  # Check repo_name instead of image
               # Describe images for the repository

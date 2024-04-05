@@ -36,7 +36,12 @@ jobs:
         id: identify-values-files
         run: |
           echo "Searching for values*.yaml files..."
-          values_files=$(find . -type f -name "values*.yaml")
+          # Get the paths of the changed files in the pull request
+          changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+
+          # Filter the paths to include only values*.yaml files
+          values_files=$(echo "$changed_files" | grep 'values.*\.yaml')
+
           if [ -n "$values_files" ]; then
               echo "Values*.yaml files found:"
               echo "$values_files"
@@ -79,6 +84,7 @@ jobs:
           echo "::set-output name=latestTags::$latestTags"
 
       - name: Login to Amazon ECR
+        if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
           for file in $values_files; do
               echo "Processing $file..."
@@ -95,25 +101,25 @@ jobs:
               done
           done
 
-      - name: Debug Step Output
-        run: |
-          echo "Identify Values Files output: ${{ steps.identify-values-files.outputs.values_files }}"
-
       - name: List ECR Images, ImageTag/OverrrideTag
+        if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
-          echo "Listing ECR repositories..."
+          echo "Describing Images..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output text)
-          ecr_repositories="${ecr_repositories// /\\n}"  # Replace spaces with newlines for easier processing
+          ecr_repositories="${ecr_repositories// /\\n}" 
 
           while IFS= read -r repo_info; do
               repo_name=$(echo "$repo_info" | cut -f1)
               repo_uri=$(echo "$repo_info" | cut -f2)
               echo "Describing images for repository: $repo_name ($repo_uri)"
-              if [ -n "$image" ]; then
-                  # Describe images for the repository
-                  aws ecr describe-images --repository-name "$repo_name"
-              else
-                  echo "No images found for repository: $repo_name"
+              # Check if the repository URI matches the one extracted from the image URI
+              if [[ "$repo_uri" == *"$image_uri"* ]]; then
+                  if [ -n "$image" ]; then
+                      # Describe images for the repository
+                      aws ecr describe-images --repository-name "$repo_name"
+                  else
+                      echo "No images found for repository: $repo_name"
+                  fi
               fi
           done <<< "$ecr_repositories"
           echo "Done."

@@ -7,6 +7,7 @@ on:
   push:
     paths:
       - '**/values*.yaml'
+
 jobs:
   validate_image_tags:
     name: Validate Image Tags
@@ -30,17 +31,12 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-      
-      #- name: Login to Amazon ECR
-      #  uses: aws-actions/amazon-ecr-login@v2
 
       - name: Identify Values Files
         id: identify-values-files
         run: |
-          #!/bin/bash
-
           echo "Searching for values*.yaml files..."
-          values_files=$(find . -type f -name "values*.yaml")
+          values_files=$(find workloads/crypto-service -type f -name "values*.yaml")
 
           if [ -n "$values_files" ]; then
               echo "Values*.yaml files found:"
@@ -50,7 +46,7 @@ jobs:
               echo "No values*.yaml files found."
               exit 1
           fi
-          
+
           overrideTag=""
           image=""
           latestTags=()
@@ -66,28 +62,23 @@ jobs:
                       overrideTag="${BASH_REMATCH[1]}"
                       echo "Override Tag: $overrideTag"
                       echo "Image: $image"
-                      # If overrideTag is found, no need to search for latestTag
                       latestTags=()  # Clearing the latestTags array
                       continue
                   fi
                   if [[ $line =~ latestTag:\ (.+) ]]; then
                       if [[ -z "$overrideTag" ]]; then
-                          latestTag+=("${BASH_REMATCH[1]}") # Append the latestTag to the array
+                          latestTags+=("${BASH_REMATCH[1]}") # Append the latestTag to the array
                           echo "Latest Tag: ${BASH_REMATCH[1]}"
                       fi
                   fi
               done < "$file"
-              
-              # Check if overrideTag is found before breaking the loop
-              if [[ -n "$overrideTag" ]]; then
-                  break
-              fi
           done
+
           # Set outputs
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=image::$image"
-          echo "::set-output name=latestTags::$latestTag"
-      
+          echo "::set-output name=latestTags::$latestTags"
+
       - name: Login to Amazon ECR
         run: |
           for file in $values_files; do
@@ -104,27 +95,31 @@ jobs:
                   fi
               done
           done
+
       - name: Debug Step Output
         run: |
           echo "Identify Values Files output: ${{ steps.identify-values-files.outputs.values_files }}"
+
       - name: List ECR Repos
         run: |
           echo "Listing ECR repositories..."
-          aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'
-          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output table)"
-      - name: Describe Images per Repository
-        run: |
-          ecr_repositories="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
-          echo "ecr_repositories: $ecr_repositories"  # Debugging output
-          while IFS=$'\t' read -r repo_name repo_uri; do
-            echo "Repo Name: $repo_name, Repo URI: $repo_uri"
-            if [ -n "$repo_name" ]; then
+          ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output text)
+          ecr_repositories="${ecr_repositories// /\\n}"  # Replace spaces with newlines for easier processing
+
+          while IFS= read -r repo_info; do
+              repo_name=$(echo "$repo_info" | cut -f1)
+              repo_uri=$(echo "$repo_info" | cut -f2)
               echo "Describing images for repository: $repo_name ($repo_uri)"
-              aws ecr describe-images --repository-name githubaction
-            else
-              echo "Skipping empty repository name."
-            fi
+              if [ -n "$image" ]; then
+                  # Describe images for the repository
+                  aws ecr describe-images --repository-name "$repo_name"
+              else
+                  echo "No images found for repository: $repo_name"
+              fi
           done <<< "$ecr_repositories"
+
+          echo "Done."
+
       - name: Check ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
@@ -139,38 +134,38 @@ jobs:
 
           # Check if image, overrideTag, or latestTags exist in ECR repositories
           if [[ -n "$image" ]]; then
-            echo "Checking image against ECR repositories..."
-            if echo "$ecr_repositories" | grep -q "$image"; then
-              echo "Image '$image' found in ECR."
-            else
-              echo "Image '$image' not found in ECR."
-            fi
+              echo "Checking image against ECR repositories..."
+              if echo "$ecr_repositories" | grep -q "$image"; then
+                  echo "Image '$image' found in ECR."
+              else
+                  echo "Image '$image' not found in ECR."
+              fi
           fi
           if [[ -n "$overrideTag" ]]; then
-            echo "Checking overrideTag against ECR repositories..."
-            if echo "$ecr_repositories" | grep -q "$overrideTag"; then
-              echo "OverrideTag '$overrideTag' found in ECR."
-            else
-              echo "OverrideTag '$overrideTag' not found in ECR."  
-            fi
+              echo "Checking overrideTag against ECR repositories..."
+              if echo "$ecr_repositories" | grep -q "$overrideTag"; then
+                  echo "OverrideTag '$overrideTag' found in ECR."
+              else
+                  echo "OverrideTag '$overrideTag' not found in ECR."
+              fi
           fi
           if [[ -n "$latestTags" ]]; then
-            for tag in $latestTags; do
-              echo "Checking latestTag '$tag' against ECR repositories..."
-              if echo "$ecr_repositories" | grep -q "$tag"; then
-                echo "LatestTag '$tag' found in ECR."
-              else
-                echo "LatestTag '$tag' not found in ECR."
-              fi
-            done
+              for tag in $latestTags; do
+                  echo "Checking latestTag '$tag' against ECR repositories..."
+                  if echo "$ecr_repositories" | grep -q "$tag"; then
+                      echo "LatestTag '$tag' found in ECR."
+                  else
+                      echo "LatestTag '$tag' not found in ECR."
+                  fi
+              done
           fi
       - name: Display Validation Result
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}
         run: |
           # Check if the image, overrideTag, or latestTags are found in the ECR repository
           if [[ -n "${{ steps.check-ecr.outputs.imageFound }}" || -n "${{ steps.check-ecr.outputs.overrideTagFound }}" || -n "${{ steps.check-ecr.outputs.latestTagFound }}" ]]; then
-            echo "Validation successful. Image, overrideTag, or latestTags found in ECR."
+              echo "Validation successful. Image, overrideTag, or latestTags found in ECR."
           else
-            echo "Validation failed. Image, overrideTag, and latestTags not found in ECR."
-            exit 1
+              echo "Validation failed. Image, overrideTag, and latestTags not found in ECR."
+              exit 1
           fi

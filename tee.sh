@@ -49,7 +49,6 @@
           echo "::set-output name=image::$image"
           echo "::set-output name=latestTags::$latestTag"
 
-
           for file in $values_files; do
               echo "Processing $file..."
               # Use awk to filter out special characters
@@ -76,7 +75,7 @@
     #echo "Repo Name: $repo_name, Repo URI: $repo_uri"
     #if [ -n "$repo_name" ]; then
       #echo "Describing images for repository: $repo_name ($repo_uri)"
-      aws ecr describe-images --repository-name githubaction
+      aws ecr describe-images --repository-name "$repo_name"
     else
       echo "Skipping empty repository name."
     fi

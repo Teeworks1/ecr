@@ -84,7 +84,7 @@ jobs:
           echo "::set-output name=latestTags::$latestTags"
 
       - name: Print Event Payload
-       run: echo "$GITHUB_EVENT_PATH"
+        run: echo "$GITHUB_EVENT_PATH"
        
       - name: Login to Amazon ECR
         if: ${{ steps.identify-values-files.outputs.values_files != '' }}

@@ -128,12 +128,16 @@ jobs:
         run: |
           ecr_repositories="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
           echo "ecr_repositories: $ecr_repositories"  # Debugging output
-          while IFS=$'\t' read -r repo_name repo_uri; do
-            echo "Repo Name: $repo_name, Repo URI: $repo_uri"
-            if [ -n "$repo_name" ]; then
-              echo "Describing images for repository: $repo_name ($repo_uri)"
-              aws ecr describe-images --repository-name githubaction
+          while IFS= read -r repo_info; do
+            repo_name=$(echo "$repo_info" | cut -f1)
+            repo_uri=$(echo "$repo_info" | cut -f2)
+            echo "Describing images for repository: $repo_name ($repo_uri)"
+            if [ -n "$image" ]; then
+              # Describe images for the repository
+              aws ecr describe-images --repository-name "$repo_name"
             else
-              echo "Skipping empty repository name."
+              echo "No images found for repository: $repo_name"
             fi
           done <<< "$ecr_repositories"
+
+          echo "Done."

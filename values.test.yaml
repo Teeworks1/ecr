@@ -168,7 +168,7 @@ redis-ha:
    - name: cash-positions-calc
       image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction
       entryClass: com.wealthsimple.accountingflinkjobs.cashpositions.MainKt
-      flinkVersion: v1_14
+      flinkVersion: v1_15
       ephemeralVolume:
         storageSize: '128Gi'
         mountPath:

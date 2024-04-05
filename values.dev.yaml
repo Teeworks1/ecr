@@ -8,5 +8,4 @@ global:
       flinkVersion: v1_14
       ephemeralVolume:
         storageSize: '128Gi'
-        mountPath:
-        
+        mountPath:  

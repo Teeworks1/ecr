@@ -172,4 +172,4 @@ redis-ha:
       ephemeralVolume:
         storageSize: '128Gi'
         mountPath:
-          path: /var/svc/cluster/local
+          path: /var/svc/cluster/local/

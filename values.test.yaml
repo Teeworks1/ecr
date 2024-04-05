@@ -172,3 +172,4 @@ redis-ha:
       ephemeralVolume:
         storageSize: '128Gi'
         mountPath:
+          path: /var/log

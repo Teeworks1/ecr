@@ -36,8 +36,7 @@ jobs:
         id: identify-values-files
         run: |
           echo "Searching for values*.yaml files..."
-          values_files=$(find workloads/crypto-service -type f -name "values*.yaml")
-
+          values_files=$(find . -type f -name "values*.yaml")
           if [ -n "$values_files" ]; then
               echo "Values*.yaml files found:"
               echo "$values_files"

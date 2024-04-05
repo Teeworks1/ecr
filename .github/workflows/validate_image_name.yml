@@ -99,7 +99,7 @@ jobs:
         run: |
           echo "Identify Values Files output: ${{ steps.identify-values-files.outputs.values_files }}"
 
-      - name: List ECR Repos
+      - name: List ECR Images, ImageTag/OverrrideTag
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output text)
@@ -116,7 +116,6 @@ jobs:
                   echo "No images found for repository: $repo_name"
               fi
           done <<< "$ecr_repositories"
-
           echo "Done."
 
       - name: Check ECR

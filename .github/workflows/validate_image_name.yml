@@ -119,6 +119,7 @@ jobs:
               done
           done
        
+           
       - name: List ECR Repos
         run: |
           echo "Listing ECR repositories..."
@@ -126,9 +127,7 @@ jobs:
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "ECR Repositories:"
           echo "$ecr_repositories"
-        
-      - name: Describe ECR Images
-        run: |
+
           # Iterate through each repository
           echo "$ecr_repositories" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
             echo "Repo Name: $repo_name, Repo URI: $repo_uri"
@@ -151,4 +150,3 @@ jobs:
               echo "Skipping empty repository URI."
             fi
           done
-

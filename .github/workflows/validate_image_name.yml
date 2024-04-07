@@ -132,6 +132,7 @@ jobs:
               # Extract registry ID and region from repository URI
               registry_id=$(echo "$repo_uri" | cut -d'.' -f1)
               region=$(echo "$repo_uri" | cut -d'.' -f4)
+            fi
 
       - name: Describe Images per Repository
         run: |

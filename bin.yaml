@@ -1,0 +1,10 @@
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: alpine-sleeper-cka15-arch
+spec:
+  containers:
+  - name: alpine
+    image: alpine
+    command: ["/bin/sh", "-c", "sleep 7200"]

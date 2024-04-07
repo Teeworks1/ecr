@@ -1,3 +1,4 @@
+---
 name: ECR Image Tag Validation
 
 on:
@@ -127,7 +128,7 @@ jobs:
       - name: Describe Images per Repository
         run: |
           ecr_repositories="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
-          while IFS=$'\t' read -r repo_name repo_uri; do
+          echo "$ecr_repositories" | jq -r '.[] | "\(.repositoryName) \(.repositoryUri)"' | while read -r repo_name repo_uri; do
             echo "Repo Name: $repo_name, Repo URI: $repo_uri"
             if [ -n "$repo_name" ]; then
               echo "Describing images for repository: $repo_name ($repo_uri)"
@@ -135,4 +136,4 @@ jobs:
             else
               echo "Skipping empty repository name."
             fi
-          done <<< "$ecr_repositories"
+          done

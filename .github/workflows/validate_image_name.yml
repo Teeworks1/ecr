@@ -123,7 +123,15 @@ jobs:
         run: |
           echo "Listing ECR repositories..."
           aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]'
-          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)"
+          echo "::set-output name=ecr_repositories::$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)"  
+          echo "$ecr_repositories" | jq -r '.[] | "\(.repositoryName) \(.repositoryUri)"' | while read -r repo_name repo_uri; do
+          echo "Repo Name: $repo_name, Repo URI: $repo_uri"
+            if [ -n "$repo_name" ]; then
+              echo "Describing images for repository: $repo_name ($repo_uri)"
+              
+              # Extract registry ID and region from repository URI
+              registry_id=$(echo "$repo_uri" | cut -d'.' -f1)
+              region=$(echo "$repo_uri" | cut -d'.' -f4)
 
       - name: Describe Images per Repository
         run: |

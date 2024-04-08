@@ -9,7 +9,7 @@
        - name: Describe ECR Images
         run: |
             # Get the output from the List ECR Repos step
-          # Iterate through each repository
+            # Iterate through each repository
             ecr_repositories_output="${{ steps.list_ecr_repos.outputs.ecr_repositories }}"
             echo "$ecr_repositories" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
             echo "Repo Name: $repo_name, Repo URI: $repo_uri"

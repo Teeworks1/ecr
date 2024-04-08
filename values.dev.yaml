@@ -10,5 +10,3 @@ global:
         storageSize: '128Gi'
         mountPath:
          path:
-         
-

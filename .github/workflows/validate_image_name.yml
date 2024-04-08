@@ -129,7 +129,7 @@ jobs:
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step
-          ecr_repositories_output="${{ steps.list_ecr_repos.outputs.ecr_repositories }}"
+           ecr_repositories_output="${{ steps.list_ecr_repos.outputs.ecr_repositories }}"
           echo "ECR Repositories from previous step:"
           echo "$ecr_repositories_output"
 

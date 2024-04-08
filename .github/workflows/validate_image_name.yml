@@ -123,8 +123,8 @@ jobs:
           echo "::set-output name=ecr_repositories::$ecr_repositories""
 
      
-       - name: Describe ECR Images
-         run: |
+      - name: Describe ECR Images
+        run: |
             # Get the output from the List ECR Repos step
             # Iterate through each repository
             ecr_repositories_output="${{ steps.list_ecr_repos.outputs.ecr_repositories }}"

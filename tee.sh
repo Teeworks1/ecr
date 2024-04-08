@@ -7,7 +7,7 @@
           echo "$ecr_repositories"
 
        - name: Describe ECR Images
-        run: |
+         run: |
             # Get the output from the List ECR Repos step
             # Iterate through each repository
             ecr_repositories_output="${{ steps.list_ecr_repos.outputs.ecr_repositories }}"

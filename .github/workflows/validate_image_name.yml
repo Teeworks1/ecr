@@ -95,7 +95,6 @@ jobs:
                   fi
               done < "$file"
           done
-
           # Set outputs
           echo "::set-output name=overrideTag::$overrideTag"
           echo "::set-output name=image::$image"
@@ -148,3 +147,10 @@ jobs:
               echo "Skipping empty repository URI."
             fi
           done
+      
+      - name: Process ECR Image Details
+        if: steps.describe-ecr-images.outputs.images != 'null'
+        run: |
+          ecr_images_output="${{ steps.describe-ecr-images.outputs.images }}"
+          echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'
+

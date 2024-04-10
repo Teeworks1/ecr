@@ -18,7 +18,7 @@ spec:
         imagePullPolicy: Always
         image: {{.Values.spec.containers.image}}
         ports:
-        - containerPort: 80
+        - containerPort: 8080
           name: http-web-svc
       imagePullSecrets:
         - name: regcred
@@ -35,5 +35,5 @@ spec:
   ports:
   - name: name-of-service-port
     protocol: TCP
-    port: 80
+    port: 8080
     targetPort: http-web-svc

@@ -1,0 +1,12 @@
+  ---
+global:
+  latestTag: 3594847484930344738
+  overrideTag: 3374644783947859606776966857fff554feeh
+   - name: cash-positions-calc
+      image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction
+      entryClass: com.wealthsimple.accountingflinkjobs.cashpositions.MainKt
+      flinkVersion: v1_14
+      ephemeralVolume:
+        storageSize: '128Gi'
+        mountPath:
+         path: /var/log/app.log

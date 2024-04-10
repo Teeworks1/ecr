@@ -11,8 +11,6 @@ on:
 jobs:
   validate_image_tags:
     name: Validate Image Tags
-  validate_image_tags:
-    name: Validate Image Tags
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Pull Request
@@ -51,17 +49,14 @@ jobs:
           echo "$DIFF"
           # Escape newlines (replace \n with %0A)
           echo "::set-output name=diff::$(echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g')"
-
       - name: Identify Values Files
         id: identify-values-files
         run: |
           echo "Searching for values*.yaml files..."
           # Get the paths of the changed files
           changed_files="${{ steps.diff.outputs.diff }}"
-
           # Filter the paths to include only values*.yaml files
           values_files=$(echo "$changed_files" | grep 'values.*\.yaml')
-
           if [ -n "$values_files" ]; then
               echo "Values*.yaml files found:"
               echo "$values_files"
@@ -124,7 +119,6 @@ jobs:
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "$ecr_repositories"
-
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step
@@ -155,4 +149,3 @@ jobs:
         run: |
           ecr_images_output="${{ steps.describe-ecr-images.outputs.images }}"
           echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'
-

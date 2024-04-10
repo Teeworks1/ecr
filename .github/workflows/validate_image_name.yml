@@ -111,8 +111,7 @@ jobs:
                       aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
                   fi
               done
-          done    
-           
+          done            
       - name: List ECR Repos
         run: |
           echo "Listing ECR repositories..."

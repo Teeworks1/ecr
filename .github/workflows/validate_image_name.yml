@@ -11,6 +11,8 @@ on:
 jobs:
   validate_image_tags:
     name: Validate Image Tags
+  validate_image_tags:
+    name: Validate Image Tags
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Pull Request

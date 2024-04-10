@@ -1,0 +1,30 @@
+---
+global:
+  app:
+    env: staging
+    name: some-service
+  latestTag: 67b9d1277bb6590a716e3a69d5481f62af5a5c52
+ws-service:
+  memory: 1024Mi
+  cpu: 100m
+  env:
+    SOME_ENVIRONMENT_VARIABLE: "FOO"
+  deployments:
+    - name: "some-service" 
+      image: 526316940316.dkr.ecr.us-east-1.amazonaws.com/wealthsimple/financial-metrics-service
+      command: [ "java" ]
+      args:
+        - "-jar"
+        - "application.jar"
+      port: "8080"
+      healthCheckUri: "/health"
+      ingress: "private"
+    - name: "api" # financial-metrics-service gets automatically prepended
+      image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/wealthsimple/financial-metrics-service-api
+      command: [ "java" ]
+      args:
+        - "-jar"
+        - "application.jar"
+      port: "8019"
+      healthCheckUri: "/health"
+      ingress: "private"

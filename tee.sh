@@ -10,7 +10,6 @@
   run: |
     # Get the output from the List ECR Repos step
     # Iterate through each repository
-    ecr_repositories_output="${{ steps.list_ecr_repos.outputs.ecr_repositories }}"
     echo "$ecr_repositories" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
       echo "Repo Name: $repo_name, Repo URI: $repo_uri"
       if [ -n "$repo_uri" ]; then
@@ -32,11 +31,13 @@
        
     done
        # Check if any images were found
-    echo "::set-output name=images::$ecr_images_output"
+    echo describe_ecr_images=hello" >> $GITHUB_ENV
 
 - name: Process ECR Image Details
   if: steps.describe-ecr-images.outputs.images != 'null'
   run: |
-    ecr_images_output="${{ steps.describe-ecr-images.outputs.images }}"
+    # Retrieve the output from the previous step
+   
+    
+    # Process the output using jq to extract relevant information
     echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'
-

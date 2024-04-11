@@ -122,10 +122,8 @@ jobs:
               # Check if overrideTag is found, then echo it
               if $overrideTag_found; then
                   echo "::set-output name=overrideTag::$overrideTag"
-              fi
-
-              # If no overrideTag is found, but latestTag is found, set an output for latestTag
-              if ! $overrideTag_found && $latestTag_found; then
+              elif $latestTag_found; then
+                  # If overrideTag is not found, echo latestTag only if it was not overridden
                   echo "::set-output name=latestTag::$latestTags"
               fi
 
@@ -180,7 +178,6 @@ jobs:
                   echo "Skipping empty repository URI."
               fi
           done
-
       - name: Process ECR Image Details
         if: steps.describe-ecr-images.outputs.images != 'null'
         run: |

@@ -146,6 +146,7 @@ jobs:
           echo "ecr_repositories<<EOF" >> $GITHUB_OUTPUT
           echo "$ecr_repositories" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+          echo "$GITHUB_OUTPUT"
 
       - name: Describe ECR Images
         run: |

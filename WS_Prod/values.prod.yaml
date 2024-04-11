@@ -48,7 +48,7 @@ global:
         resource:
           memory: 8192m
           cpu: 1
-      numberOfTaskSlots: 6
+      numberOfTaskSlots: 2
       parallelism: 4
       flinkConfiguration:
         io.tmp.dirs: '/opt/flink/data'

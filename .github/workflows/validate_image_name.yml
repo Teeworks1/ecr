@@ -1,3 +1,4 @@
+---
 name: ECR Image Tag Validation
 
 on:
@@ -24,7 +25,7 @@ jobs:
           path: |
             path/to/cache-directory
           key: ${{ runner.os }}-build-${{ hashFiles('**/values*.yaml') }}
-      - name: Configure AWS Credentials
+     - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -98,6 +99,7 @@ jobs:
               }
 
               process_yaml "$file"
+              overrideTag_found=false  # Initialize a flag to track if overrideTag is found
 
               # Additional logic to extract overrideTag and latestTag
               while IFS= read -r line; do
@@ -106,18 +108,19 @@ jobs:
                       echo "Override Tag: $overrideTag"
                       echo "Image: $current_image"
                       latestTags=()  # Clearing the latestTags array
+                      overrideTag_found=true  # Set the flag to true when overrideTag is found
                       break  # Stop processing the file if overrideTag is found
-                  elif [[ $line =~ latestTag:\ (.+) ]] && [[ -z "$overrideTag" ]]; then
+                  elif [[ $line =~ latestTag:\ (.+) ]] && ! $overrideTag_found; then
                       latestTags="${BASH_REMATCH[1]}" # Store the latestTag value
                       echo "Latest Tag: ${BASH_REMATCH[1]}"
                   fi
               done < "$file"
-          done
 
-          # Set outputs
-          echo "::set-output name=overrideTag::$overrideTag"
-          echo "::set-output name=image::$current_image"
-          echo "::set-output name=latestTags::$latestTags"
+              # Set outputs
+              echo "::set-output name=overrideTag::$overrideTag"
+              echo "::set-output name=image::$current_image"
+              echo "::set-output name=latestTags::$latestTags"
+          done
       - name: Login to Amazon ECR
         run: |
           for file in $values_files; do

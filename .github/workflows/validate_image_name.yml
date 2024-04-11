@@ -1,4 +1,3 @@
----
 name: ECR Image Tag Validation
 
 on:
@@ -98,27 +97,37 @@ jobs:
                   parse_yaml "$file"
               }
               process_yaml "$file"
-              overrideTag_found=false  # Initialize a flag to track if overrideTag is found
+             overrideTag_found=false  # Initialize a flag to track if overrideTag is found
+latestTag_found=false   # Initialize a flag to track if latestTag is found
 
-              # Additional logic to extract overrideTag and latestTag
-              while IFS= read -r line; do
-                  if [[ $line =~ overrideTag:\ (.+) ]]; then
-                      overrideTag="${BASH_REMATCH[1]}"
-                      echo "Override Tag: $overrideTag"
-                      echo "Image: $current_image"
-                      latestTags=()  # Clearing the latestTags array
-                      overrideTag_found=true  # Set the flag to true when overrideTag is found
-                      break  # Stop processing the file if overrideTag is found
-                  elif [[ $line =~ latestTag:\ (.+) ]] && ! $overrideTag_found; then
-                      latestTags="${BASH_REMATCH[1]}" # Store the latestTag value
-                      echo "Latest Tag: ${BASH_REMATCH[1]}"
-                  fi
-              done < "$file"
+# Additional logic to extract overrideTag and latestTag
+while IFS= read -r line; do
+    if [[ $line =~ overrideTag:\ (.+) ]]; then
+        overrideTag="${BASH_REMATCH[1]}"
+        echo "Override Tag: $overrideTag"
+        echo "Image: $current_image"
+        latestTags=()  # Clearing the latestTags array
+        overrideTag_found=true  # Set the flag to true when overrideTag is found
+        # Reset latestTag flag, as overrideTag has priority
+        latestTag_found=false
+        break  # Stop processing the file if overrideTag is found
+    elif [[ $line =~ latestTag:\ (.+) ]] && ! $overrideTag_found; then
+        latestTags="${BASH_REMATCH[1]}" # Store the latestTag value
+        echo "Latest Tag: ${BASH_REMATCH[1]}"
+        latestTag_found=true  # Set the flag to true when latestTag is found
+    fi
+done < "$file"
 
-              # Check if overrideTag is found, then echo it
-              if $overrideTag_found; then
-                  echo "::set-output name=overrideTag::$overrideTag"
-              fi
+# Check if overrideTag is found, then echo it
+if $overrideTag_found; then
+    echo "::set-output name=overrideTag::$overrideTag"
+fi
+
+# If no overrideTag is found, but latestTag is found, set an output for latestTag
+if ! $overrideTag_found && $latestTag_found; then
+    echo "::set-output name=latestTag::$latestTags"
+fi
+
 
               # Set outputs
               echo "::set-output name=overrideTag::$overrideTag"
@@ -141,14 +150,12 @@ jobs:
                   fi
               done
           done
-
       - name: List ECR Repos
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "$ecr_repositories"
-
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step
@@ -173,7 +180,6 @@ jobs:
               echo "Skipping empty repository URI."
             fi
           done
-
       - name: Process ECR Image Details
         if: steps.describe-ecr-images.outputs.images != 'null'
         run: |

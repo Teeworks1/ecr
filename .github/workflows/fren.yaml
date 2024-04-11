@@ -1,0 +1,13 @@
+name: Test GitHub Env
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test_env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check $GITHUB_ENV
+        run: echo "GITHUB_ENV is: $GITHUB_ENV"

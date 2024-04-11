@@ -69,14 +69,12 @@ jobs:
           overrideTag=""
           image=""
           latestTags=()
-
           for file in $values_files; do
               echo "Processing $file..."
               process_yaml() {
                   local file="$1"
                   local in_global=false
                   local current_image=""
-
                   # Function to recursively process YAML structure
                   parse_yaml() {
                       local yaml_file="$1"
@@ -96,13 +94,10 @@ jobs:
                           fi
                       done < "$yaml_file"
                   }
-
                   parse_yaml "$file"
               }
-
               process_yaml "$file"
               overrideTag_found=false  # Initialize a flag to track if overrideTag is found
-
               # Additional logic to extract overrideTag and latestTag
               while IFS= read -r line; do
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
@@ -117,7 +112,6 @@ jobs:
                       echo "Latest Tag: ${BASH_REMATCH[1]}"
                   fi
               done < "$file"
-
               # Set outputs
               echo "::set-output name=overrideTag::$overrideTag"
               echo "::set-output name=image::$current_image"
@@ -143,11 +137,9 @@ jobs:
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
-          echo "ecr_repositories<<EOF" >> $GITHUB_ENV
-          echo "$ecr_repositories" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          echo "$GITHUB_ENV"
-
+          echo "ecr_repositories<<EOF" >> $GITHUB_OUTPUT
+          echo "$ecr_repositories" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step

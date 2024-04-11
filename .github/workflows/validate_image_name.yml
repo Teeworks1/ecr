@@ -62,9 +62,6 @@ jobs:
               echo "No values*.yaml files found."
               exit 1
           fi
-      - name: Process Values Files
-        id: process-values-files
-        run: |
           overrideTag=""
           image=""
           latestTags=()

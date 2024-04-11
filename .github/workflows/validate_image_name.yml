@@ -70,7 +70,7 @@ jobs:
               while IFS= read -r line; do
                   if [[ $line =~ image:\ (.+) ]]; then
                       image="${BASH_REMATCH[1]}"
-                      echo "Image: $image"
+                      echo "Image: $image
                   fi
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
                       overrideTag="${BASH_REMATCH[1]}"

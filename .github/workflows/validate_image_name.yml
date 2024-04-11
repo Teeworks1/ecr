@@ -32,6 +32,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+
       - name: Check for changes
         id: diff
         run: |
@@ -138,7 +139,7 @@ jobs:
               done
           done
       - name: List ECR Repos
-        id: list ecr repos
+        id: list_ecr_repos
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
@@ -149,7 +150,7 @@ jobs:
           # Get the output from the List ECR Repos step
           # Iterate through each repository
           ecr_repositories_output="${{ steps.list_ecr_repos.outputs.ecr_repositories }}"
-          echo "$ecr_repositories" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
+          echo "$ecr_repositories_output" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
             echo "Repo Name: $repo_name, Repo URI: $repo_uri"
             if [ -n "$repo_uri" ]; then
               # Extract registry ID and region from repository URI
@@ -172,5 +173,4 @@ jobs:
       - name: Process ECR Image Details
         if: steps.describe-ecr-images.outputs.images != 'null'
         run: |
-
           echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'

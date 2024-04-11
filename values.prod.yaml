@@ -11,7 +11,7 @@ global:
         mountPath: '/opt/flink/data'
       jobManager:
         resource:
-          memory: 2048m
+          memory: 4096m
       taskManager:
         resource:
           memory: 16384m

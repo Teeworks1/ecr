@@ -1,3 +1,4 @@
+---
 name: ECR Image Tag Validation
 
 on:
@@ -49,6 +50,7 @@ jobs:
           echo "$DIFF"
           # Escape newlines (replace \n with %0A)
           echo "::set-output name=diff::$(echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g')"
+
       - name: Identify Values Files
         id: identify-values-files
         run: |
@@ -65,7 +67,10 @@ jobs:
               echo "No values*.yaml files found."
               exit 1
           fi
-       
+
+      - name: Process Values Files
+        id: process-values-files
+        run: |
           overrideTag=""
           image=""
           latestTags=()
@@ -82,6 +87,10 @@ jobs:
                       echo "Override Tag: $overrideTag"
                       echo "Image: $image"
                       latestTags=()  # Clearing the latestTags array
+                      continue  # Skip processing latestTag if overrideTag is found
+                  fi
+                  if [[ $line =~ latestTag:\ (.+) ]]; then
+                      # Skip processing latestTag if overrideTag is found
                       continue
                   fi
                   if [[ $line =~ latestTag:\ (.+) ]]; then
@@ -111,13 +120,15 @@ jobs:
                       aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
                   fi
               done
-          done            
+          done
+
       - name: List ECR Repos
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "$ecr_repositories"
+
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step
@@ -142,7 +153,7 @@ jobs:
               echo "Skipping empty repository URI."
             fi
           done
-      
+
       - name: Process ECR Image Details
         if: steps.describe-ecr-images.outputs.images != 'null'
         run: |

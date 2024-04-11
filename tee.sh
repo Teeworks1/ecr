@@ -40,7 +40,7 @@
    
     
     # Process the output using jq to extract relevant information
-    echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'
+    echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \( .registryId ), Repository Name: \( .repositoryName ), Image Tag: \( .imageTags[0] )"'
  
  cat << EOF
  This is not just a new script

@@ -138,10 +138,11 @@ jobs:
               done
           done
       - name: List ECR Repos
+        id: list ecr repos
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
-          echo "::set-output name=ecr_repositories::$ecr_repositories"
+          echo "ecr_repositories=$ecr_repositories" >> $GITHUB_OUTPUT
           echo "$ecr_repositories"
       - name: Describe ECR Images
         run: |
@@ -159,7 +160,8 @@ jobs:
                 echo "Extracted Registry ID: $registry_id"
                 echo "Extracted Region: $region"
                 # Describe images using AWS CLI
-                aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" --region "$region"
+                images_output=$(aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" --image-ids "$latestTag")
+                echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"' >> "$GITHUB_OUTPUT"
               else
                 echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
               fi
@@ -170,5 +172,5 @@ jobs:
       - name: Process ECR Image Details
         if: steps.describe-ecr-images.outputs.images != 'null'
         run: |
-          ecr_images_output="${{ steps.describe-ecr-images.outputs.images }}"
+
           echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'

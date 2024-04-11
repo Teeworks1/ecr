@@ -68,10 +68,21 @@ jobs:
           for file in $values_files; do
               echo "Processing $file..."
               while IFS= read -r line; do
-                  if [[ $line =~ image:\ (.+) ]]; then
-                      image="${BASH_REMATCH[1]}"
-                      echo "Image: $image"
-                  fi
+                  image=""
+in_global=false
+while IFS= read -r line; do
+    if [[ $line =~ global: ]]; then
+        in_global=true
+    elif [[ $line =~ ^\s*- && $in_global ]]; then
+        # Check if we're in a nested structure under global and the line starts with a dash
+        if [[ $line =~ image:\ (.+) ]]; then
+            image="${BASH_REMATCH[1]}"
+            echo "Image: $image"
+        fi
+    else
+        # Reset the flag if we're no longer in the global block
+        in_global=false
+    fi
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
                       overrideTag="${BASH_REMATCH[1]}"
                       echo "Override Tag: $overrideTag"

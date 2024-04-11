@@ -5,7 +5,7 @@ global:
     name: some-service
   latestTag: 67b9d1277bb6590a716e3a69d5481f62af5a5c52
 ws-service:
-  memory: 1024Mi
+  memory: 2048Mi
   cpu: 100m
   env:
     SOME_ENVIRONMENT_VARIABLE: "FOO"

@@ -26,7 +26,7 @@ global:
       flinkVersion: v1_14
       jobManager:
         resource:
-          memory: 4096m
+          memory: 2048m
       taskManager:
         resource:
           memory: 8192m

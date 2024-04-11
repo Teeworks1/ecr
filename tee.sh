@@ -19,7 +19,7 @@
         if [ -n "$registry_id" ] && [ -n "$region" ]; then
           echo "Describing images for repository: $repo_name ($repo_uri)"
           echo "Extracted Registry ID: $registry_id"
-          echo "Extracted Region: $region"
+          echo "Extracted Region: $region" 
           # Describe images using AWS CLI
           aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" --region "$region"
         else
@@ -41,3 +41,8 @@
     
     # Process the output using jq to extract relevant information
     echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'
+ 
+ cat << EOF
+ This is not just a new script
+ We started this project a long time ago
+ EOF

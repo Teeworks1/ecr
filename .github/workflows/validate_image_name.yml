@@ -1,4 +1,3 @@
----
 name: ECR Image Tag Validation
 
 on:
@@ -122,8 +121,10 @@ jobs:
               # Check if overrideTag is found, then echo it
               if $overrideTag_found; then
                   echo "::set-output name=overrideTag::$overrideTag"
-              elif $latestTag_found; then
-                  # If overrideTag is not found, echo latestTag only if it was not overridden
+              fi
+
+              # If no overrideTag is found, but latestTag is found, set an output for latestTag
+              if ! $overrideTag_found && $latestTag_found; then
                   echo "::set-output name=latestTag::$latestTags"
               fi
 
@@ -154,6 +155,7 @@ jobs:
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "$ecr_repositories"
+
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step

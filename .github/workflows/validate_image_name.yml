@@ -88,16 +88,9 @@ jobs:
                       echo "Image: $image"
                       latestTags=()  # Clearing the latestTags array
                       continue  # Skip processing latestTag if overrideTag is found
-                  fi
-                  if [[ $line =~ latestTag:\ (.+) ]]; then
-                      # Skip processing latestTag if overrideTag is found
-                      continue
-                  fi
-                  if [[ $line =~ latestTag:\ (.+) ]]; then
-                      if [[ -z "$overrideTag" ]]; then
-                          latestTags+=("${BASH_REMATCH[1]}") # Append the latestTag to the array
-                          echo "Latest Tag: ${BASH_REMATCH[1]}"
-                      fi
+                  elif [[ $line =~ latestTag:\ (.+) ]] && [[ -z "$overrideTag" ]]; then
+                      latestTags="${BASH_REMATCH[1]}" # Append the latestTag to the array
+                      echo "Latest Tag: $latestTag"
                   fi
               done < "$file"
           done

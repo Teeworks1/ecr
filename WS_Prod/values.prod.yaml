@@ -1,7 +1,8 @@
 ---
 global:
+ latestTag: 3594847484930344738
   overrideTag: 3374644783947859606776966857fff554feeh
-  latestTag: 3594847484930344738
+ 
      - name: book-value-calc
       image: 22648499440316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-hide-my-asses
       entryClass: com.wealthsimple.accountingflinkjobs.bookvalue.MainKt
@@ -34,7 +35,9 @@ global:
           memory: 8192m
       numberOfTaskSlots: 1
       parallelism: 1
-   
+    - name: cash-positions-calc
+      image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction
+      entryClass: com.wealthsimple.accountingflinkjobs.cashpositions.MainKt
       flinkVersion: v1_14
       ephemeralVolume:
         storageSize: '128Gi'

@@ -1,4 +1,3 @@
----
 name: ECR Image Tag Validation
 
 on:
@@ -72,38 +71,45 @@ jobs:
           latestTags=()
           for file in $values_files; do
               echo "Processing $file..."
-              while IFS= read -r line; do
-                  image=""
-                  in_global=false
-                  while IFS= read -r line; do
-                      if [[ $line =~ global: ]]; then
-                          in_global=true
-                      elif [[ $line =~ ^\s*- && $in_global ]]; then
-                          # Check if we're in a nested structure under global and the line starts with a dash
-                          if [[ $line =~ image:\ (.+) ]]; then
-                              image="${BASH_REMATCH[1]}"
-                              echo "Image: $image"
-                          fi
-                      else
-                          # Reset the flag if we're no longer in the global block
-                          in_global=false
-                      fi
-                      if [[ $line =~ overrideTag:\ (.+) ]]; then
-                          overrideTag="${BASH_REMATCH[1]}"
-                          echo "Override Tag: $overrideTag"
-                          echo "Image: $image"
-                          latestTags=()  # Clearing the latestTags array
-                          break  # Stop processing the file if overrideTag is found
-                      elif [[ $line =~ latestTag:\ (.+) ]] && [[ -z "$overrideTag" ]]; then
-                          latestTags="${BASH_REMATCH[1]}" # Store the latestTag value
-                          echo "Latest Tag: ${BASH_REMATCH[1]}"
-                      fi
-                  done < "$file"
-              done
+              
+              function process_yaml() {
+                local file="$1"
+                local in_global=false
+                local current_image=""
+                
+                while IFS= read -r line; do
+                    if [[ $line =~ global: ]]; then
+                        in_global=true
+                    elif [[ $line =~ ^\s*- && $in_global ]]; then
+                        # Check if we're in a nested structure under global and the line starts with a dash
+                        if [[ $line =~ image:\ (.+) ]]; then
+                            current_image="${BASH_REMATCH[1]}"
+                            echo "Image: $current_image"
+                        fi
+                    else
+                        # Reset the flag if we're no longer in the global block
+                        in_global=false
+                    fi
+                    
+                    if [[ $line =~ overrideTag:\ (.+) ]]; then
+                        overrideTag="${BASH_REMATCH[1]}"
+                        echo "Override Tag: $overrideTag"
+                        echo "Image: $current_image"
+                        latestTags=()  # Clearing the latestTags array
+                        break  # Stop processing the file if overrideTag is found
+                    elif [[ $line =~ latestTag:\ (.+) ]] && [[ -z "$overrideTag" ]]; then
+                        latestTags="${BASH_REMATCH[1]}" # Store the latestTag value
+                        echo "Latest Tag: ${BASH_REMATCH[1]}"
+                    fi
+                done < "$file"
+              }
+
+              process_yaml "$file"
           done
+
           # Set outputs
           echo "::set-output name=overrideTag::$overrideTag"
-          echo "::set-output name=image::$image"
+          echo "::set-output name=image::$current_image"
           echo "::set-output name=latestTags::$latestTags"
 
       - name: Login to Amazon ECR
@@ -121,7 +127,6 @@ jobs:
                   fi
               done
           done
-
       - name: List ECR Repos
         run: |
           echo "Listing ECR repositories..."

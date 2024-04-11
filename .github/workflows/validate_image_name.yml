@@ -143,8 +143,9 @@ jobs:
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
-          echo "ecr_repositories=$ecr_repositories" >> "$GITHUB_OUTPUT"
-          echo "$ecr_repositories"
+          echo "ecr_repositories<<EOF" >> $GITHUB_OUTPUT
+          echo "$ecr_repositories" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Describe ECR Images
         run: |

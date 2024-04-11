@@ -49,7 +49,7 @@ global:
           memory: 8192m
           cpu: 1
       numberOfTaskSlots: 2
-      parallelism: 4
+      parallelism: 8
       flinkConfiguration:
         io.tmp.dirs: '/opt/flink/data'
         state.backend.rocksdb.checkpoint.transfer.thread.num: "40"

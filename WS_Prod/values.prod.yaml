@@ -2,8 +2,7 @@
 global:
  latestTag: 3594847484930344738
   overrideTag: 3374644783947859606776966857fff554feeh
- 
-     - name: book-value-calc
+   latestTag: 3474484763920238474
       image: 22648499440316.dkr.ecr.ca-central-1.amazonaws.com/wealthsimple/accounting-hide-my-asses
       entryClass: com.wealthsimple.accountingflinkjobs.bookvalue.MainKt
       flinkVersion: v1_14

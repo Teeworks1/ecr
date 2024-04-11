@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+      
       - name: Cache repository state
         uses: actions/cache@v4
         with:
@@ -31,6 +32,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+      
       - name: Check for changes
         id: diff
         run: |
@@ -48,6 +50,7 @@ jobs:
           echo "$DIFF"
           # Escape newlines (replace \n with %0A)
           echo "::set-output name=diff::$(echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g')"
+
       - name: Identify Values Files
         id: identify-values-files
         run: |
@@ -96,6 +99,7 @@ jobs:
               }
               process_yaml "$file"
               overrideTag_found=false  # Initialize a flag to track if overrideTag is found
+
               # Additional logic to extract overrideTag and latestTag
               while IFS= read -r line; do
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
@@ -110,11 +114,18 @@ jobs:
                       echo "Latest Tag: ${BASH_REMATCH[1]}"
                   fi
               done < "$file"
+
+              # Check if overrideTag is found, then echo it
+              if $overrideTag_found; then
+                  echo "::set-output name=overrideTag::$overrideTag"
+              fi
+
               # Set outputs
               echo "::set-output name=overrideTag::$overrideTag"
               echo "::set-output name=image::$current_image"
               echo "::set-output name=latestTags::$latestTags"
           done
+
       - name: Login to Amazon ECR
         run: |
           for file in $values_files; do
@@ -130,12 +141,14 @@ jobs:
                   fi
               done
           done
+
       - name: List ECR Repos
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "$ecr_repositories"
+
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step
@@ -160,6 +173,7 @@ jobs:
               echo "Skipping empty repository URI."
             fi
           done
+
       - name: Process ECR Image Details
         if: steps.describe-ecr-images.outputs.images != 'null'
         run: |

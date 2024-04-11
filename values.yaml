@@ -1,6 +1,6 @@
 env:
   latestTag: 3594847484930344738
-  replicas: 4
+  replicas: 5
 
 spec:
   containers:

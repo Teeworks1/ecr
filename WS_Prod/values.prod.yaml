@@ -52,4 +52,4 @@ global:
       parallelism: 4
       flinkConfiguration:
         io.tmp.dirs: '/opt/flink/data'
-        state.backend.rocksdb.checkpoint.transfer.thread.num: "34"
+        state.backend.rocksdb.checkpoint.transfer.thread.num: "40"

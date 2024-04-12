@@ -1,4 +1,3 @@
-
       - name: Login to Amazon ECR
         run: |
           for file in $values_files; do

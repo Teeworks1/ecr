@@ -101,7 +101,6 @@ jobs:
               latestTag_found=false   # Initialize a flag to track if latestTag is found
 
               # Additional logic to extract overrideTag and latestTag
-              # Additional logic to extract overrideTag and latestTag
               while IFS= read -r line; do
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
                       overrideTag="${BASH_REMATCH[1]}"

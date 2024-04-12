@@ -6,7 +6,7 @@ global:
   latestTag: 67b9d1277bb6590a716e3a69d5481f62af5a5c52
   overrideTag: 478055050ejjdlldj8r8440-33833820220cb3
 ws-service:
-  memory: 1024Mi
+  memory: 2048Mi
   cpu: 200m
   env:
     SOME_ENVIRONMENT_VARIABLE: "FOO"

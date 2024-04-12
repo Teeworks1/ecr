@@ -101,6 +101,7 @@ jobs:
               latestTag_found=false   # Initialize a flag to track if latestTag is found
 
               # Additional logic to extract overrideTag and latestTag
+              # Additional logic to extract overrideTag and latestTag
               while IFS= read -r line; do
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
                       overrideTag="${BASH_REMATCH[1]}"
@@ -110,8 +111,9 @@ jobs:
                       overrideTag_found=true  # Set the flag to true when overrideTag is found
                       # Reset latestTag flag, as overrideTag has priority
                       latestTag_found=false
-                      break  # Stop processing the file if overrideTag is found
-                  elif [[ $line =~ latestTag:\ (.+) ]] && ! $overrideTag_found; then
+                      # Break the loop as overrideTag has been found
+                      break
+                  elif [[ $line =~ latestTag:\ (.+) ]]; then
                       latestTags="${BASH_REMATCH[1]}" # Store the latestTag value
                       echo "Latest Tag: ${BASH_REMATCH[1]}"
                       latestTag_found=true  # Set the flag to true when latestTag is found
@@ -121,6 +123,8 @@ jobs:
               # Check if overrideTag is found, then echo it
               if $overrideTag_found; then
                   echo "::set-output name=overrideTag::$overrideTag"
+                  # Exit the script if overrideTag is found to prevent echoing latestTag
+                  exit 0
               fi
 
               # If no overrideTag is found, but latestTag is found, set an output for latestTag
@@ -149,6 +153,7 @@ jobs:
                   fi
               done
           done
+
       - name: List ECR Repos
         run: |
           echo "Listing ECR repositories..."
@@ -180,6 +185,7 @@ jobs:
                   echo "Skipping empty repository URI."
               fi
           done
+
       - name: Process ECR Image Details
         if: steps.describe-ecr-images.outputs.images != 'null'
         run: |

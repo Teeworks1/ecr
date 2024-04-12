@@ -17,7 +17,7 @@ ws-service:
       args:
         - "-jar"
         - "application.jar"
-      port: "80"
+      port: "8080"
       healthCheckUri: "/health"
       ingress: "private"
     - name: "api" # financial-metrics-service gets automatically prepended

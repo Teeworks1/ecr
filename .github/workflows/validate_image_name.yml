@@ -154,7 +154,7 @@ jobs:
           done
 
       - name: List ECR Repos
-        id: list_ecr_repos
+        id: list-ecr-repos
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')

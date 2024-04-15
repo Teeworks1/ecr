@@ -164,8 +164,7 @@ jobs:
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step
-          ecr_repositories_output="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
-
+          ecr_repositories_output="$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
           # Check if the JSON output is not null
           if [ -n "$ecr_repositories_output" ]; then
             # Ensure that the ecr_repositories_output is properly formatted JSON

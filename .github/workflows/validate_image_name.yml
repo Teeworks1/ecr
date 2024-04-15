@@ -1,55 +1,4 @@
----
-name: ECR Image Tag Validation
-
-on:
-  pull_request:
-    paths:
-      - '**/values*.yaml'
-  push:
-    paths:
-      - '**/values*.yaml'
-
-jobs:
-  validate_image_tags:
-    name: Validate Image Tags
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Pull Request
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Cache repository state
-        uses: actions/cache@v4
-        with:
-          path: |
-            path/to/cache-directory
-          key: ${{ runner.os }}-build-${{ hashFiles('**/values*.yaml') }}
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Check for changes
-        id: diff
-        run: |
-          if [ $GITHUB_BASE_REF ]; then
-            # Pull Request
-            git fetch origin $GITHUB_BASE_REF --depth=1
-            export DIFF=$(git diff --name-only origin/$GITHUB_BASE_REF $GITHUB_SHA)
-            echo "Diff between origin/$GITHUB_BASE_REF and $GITHUB_SHA"
-          else
-            # Push
-            git fetch origin ${{ github.event.before }} --depth=1
-            export DIFF=$(git diff --name-only ${{ github.event.before }} $GITHUB_SHA)
-            echo "Diff between ${{ github.event.before }} and $GITHUB_SHA"
-          fi
-          echo "$DIFF"
-          # Escape newlines (replace \n with %0A)
-          echo "::set-output name=diff::$(echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g')"
+          a;N;$!ba;s/\n/%0A/g')"
 
       - name: Identify Values Files
         id: identify-values-files
@@ -158,14 +107,14 @@ jobs:
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
-          echo "::set-output name=ecr_repositories::$ecr_repositories"
+          echo "$ecr_repositories" | tee "$GITHUB_ENV"
           echo "$ecr_repositories"
 
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step
+          ecr_repositories_output="$ECR_REPOSITORIES"
           # Iterate through each repository
-          ecr_repositories_output="${{ steps.list_ecr_repos.outputs.ecr_repositories }}"
           echo "$ecr_repositories_output" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
             echo "Repo Name: $repo_name, Repo URI: $repo_uri"
             if [ -n "$repo_uri" ]; then
@@ -178,8 +127,7 @@ jobs:
                 echo "Extracted Region: $region"
                 # Describe images using AWS CLI
                 images_output=$(aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" --image-ids "$latestTag")
-                # Parse the output and format it as JSON
-                echo "$images_output" | jq -r --arg repo_name "$repo_name" --arg repo_uri "$repo_uri" '.imageDetails[] | { "Registry ID": .registryId, "Repository Name": $repo_name, "Repository URI": $repo_uri, "Image Tag": .imageTags[0] }' >> "$GITHUB_OUTPUT"
+                echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"' >> "$GITHUB_OUTPUT"
               else
                 echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
               fi
@@ -187,7 +135,6 @@ jobs:
               echo "Skipping empty repository URI."
             fi
           done
-
       - name: Process ECR Image Details
         if: steps.describe-ecr-images.outputs.images != 'null'
         run: |

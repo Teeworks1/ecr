@@ -183,6 +183,7 @@ jobs:
               else
                   echo "Skipping empty repository URI."
               fi
+                 echo "::set-output name=images::$images"
           done
 
       - name: Process ECR Image Details

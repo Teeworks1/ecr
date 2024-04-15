@@ -36,6 +36,7 @@
                 echo "Extracted Region: $region"
                 # Describe images using AWS CLI
                 aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" --region "$region"
+                echo "::set-output name=images::$images"
               else
                 echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
               fi

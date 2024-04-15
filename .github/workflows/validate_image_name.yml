@@ -8,7 +8,6 @@ on:
   push:
     paths:
       - '**/values*.yaml'
-
 jobs:
   validate_image_tags:
     name: Validate Image Tags
@@ -100,7 +99,6 @@ jobs:
               process_yaml "$file"
               overrideTag_found=false  # Initialize a flag to track if overrideTag is found
               latestTag_found=false   # Initialize a flag to track if latestTag is found
-
               # Additional logic to extract overrideTag and latestTag
               while IFS= read -r line; do
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
@@ -119,14 +117,12 @@ jobs:
                       latestTag_found=true  # Set the flag to true when latestTag is found
                   fi
               done < "$file"
-
               # Check if overrideTag is found, then echo it
               if $overrideTag_found; then
                   echo "::set-output name=overrideTag::$overrideTag"
                   # Exit the script if overrideTag is found to prevent echoing latestTag
                   exit 0
               fi
-
               # If no overrideTag is found, but latestTag is found, set an output for latestTag
               if ! $overrideTag_found && $latestTag_found; then
                   echo "::set-output name=latestTag::$latestTags"
@@ -136,7 +132,6 @@ jobs:
               echo "::set-output name=image::$current_image"
               echo "::set-output name=latestTags::$latestTags"
           done
-
       - name: Login to Amazon ECR
         run: |
           for file in $values_files; do
@@ -152,50 +147,38 @@ jobs:
                   fi
               done
           done
-
       - name: List ECR Repos
         id: list-ecr-repos
         run: |
           echo "Listing ECR repositories..."
-          ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
+          ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
-          echo "$ecr_repositories" 
-        
+          echo "$ecr_repositories"
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step
-          ecr_repositories_output=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
-
-          # Check if the JSON output is not null
-          if [ -n "$ecr_repositories_output" ]; then
-            # Ensure that the ecr_repositories_output is properly formatted JSON
-            echo "$ecr_repositories_output" | jq -e . >/dev/null || { echo "Invalid JSON output from List ECR Repos step"; exit 1; }
-
-            # Iterate through each repository
-            echo "$ecr_repositories_output" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
-              echo "Repo Name: $repo_name, Repo URI: $repo_uri"
-              if [ -n "$repo_uri" ]; then
-                # Extract registry ID and region from repository URI
-                registry_id=$(echo "$repo_uri" | cut -d'.' -f1)
-                region=$(echo "$repo_uri" | cut -d'.' -f4)
-                if [ -n "$registry_id" ] && [ -n "$region" ]; then
-                  echo "Describing images for repository: $repo_name ($repo_uri)"
-                  echo "Extracted Registry ID: $registry_id"
-                  echo "Extracted Region: $region"
-                  # Describe images using AWS CLI
-                  images_output=$(aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" --image-ids "$latestTag")
-                  echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"' >> "$GITHUB_OUTPUT"
-                else
-                  echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
-                fi
+          ecr_repositories_output="${{ steps.list-ecr-repos.outputs.ecr_repositories }}"
+          # Iterate through each repository
+          echo "$ecr_repositories_output" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
+            echo "Repo Name: $repo_name, Repo URI: $repo_uri"
+            if [ -n "$repo_uri" ]; then
+              # Extract registry ID and region from repository URI
+              registry_id=$(echo "$repo_uri" | cut -d'.' -f1)
+              region=$(echo "$repo_uri" | cut -d'.' -f4)
+              if [ -n "$registry_id" ] && [ -n "$region" ]; then
+                echo "Describing images for repository: $repo_name ($repo_uri)"
+                echo "Extracted Registry ID: $registry_id"
+                echo "Extracted Region: $region"
+                # Describe images using AWS CLI
+                images_output=$(aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" --image-ids "$latestTag")
+                echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"' >> "$GITHUB_OUTPUT"
               else
-                echo "Skipping empty repository URI."
+                echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
               fi
-            done
-          else
-            echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."
-          fi
-
+            else
+              echo "Skipping empty repository URI."
+            fi
+          done
       - name: Process ECR Image Details
         if: steps.describe-ecr-images.outputs.images != 'null'
         run: |

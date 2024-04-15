@@ -183,7 +183,7 @@ jobs:
                   echo "Extracted Region: $region"
                   # Describe images using AWS CLI
                   images_output=$(aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" )
-                  echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName))"'
+                  echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName)"'
                 else
                   echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
                 fi

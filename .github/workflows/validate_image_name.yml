@@ -197,8 +197,8 @@ jobs:
     fi
 
 
-      - name: Process ECR Image Details
-        if: steps.describe-ecr-images.outputs.images != 'null'
-        run: |
-          ecr_images_output="${{ steps.describe-ecr-images.outputs.images }}"
-          echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'
+   - name: Process ECR Image Details
+     if: steps.describe-ecr-images.outputs.images != 'null'
+     run: |
+       ecr_images_output="${{ steps.describe-ecr-images.outputs.images }}"
+       echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'

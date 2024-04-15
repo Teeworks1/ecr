@@ -16,7 +16,7 @@ global:
       taskManager:
         resource:
           memory: 1024m
-          cpu: 3
+          cpu: 2
       numberOfTaskSlots: 3
       flinkConfiguration:
         io.tmp.dirs: '/opt/flink/data'

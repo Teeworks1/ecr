@@ -152,8 +152,10 @@ jobs:
         run: |
           echo "Listing ECR repositories..."
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
-          echo "::set-output name=ecr_repositories::$ecr_repositories"
-          echo "$ecr_repositories"
+          unique_repositories=$(echo "$ecr_repositories" | awk '!seen[$0]++')
+          # Set the output with unique repositories
+          echo "::set-output name=ecr_repositories::$unique_repositories"
+          echo "$unique_repositories""
       - name: Describe ECR Images
         run: |
           # Get the output from the List ECR Repos step

@@ -1,3 +1,4 @@
+---
 name: ECR Image Tag Validation
 
 on:
@@ -17,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      
+
       - name: Cache repository state
         uses: actions/cache@v4
         with:
@@ -31,7 +32,7 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-      
+
       - name: Check for changes
         id: diff
         run: |
@@ -165,25 +166,26 @@ jobs:
           # Get the output from the List ECR Repos step
           # Iterate through each repository
           ecr_repositories_output="${{ steps.list_ecr_repos.outputs.ecr_repositories }}"
-          echo "$ecr_repositories" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
-              echo "Repo Name: $repo_name, Repo URI: $repo_uri"
-              if [ -n "$repo_uri" ]; then
-                  # Extract registry ID and region from repository URI
-                  registry_id=$(echo "$repo_uri" | cut -d'.' -f1)
-                  region=$(echo "$repo_uri" | cut -d'.' -f4)
-                  if [ -n "$registry_id" ] && [ -n "$region" ]; then
-                      echo "Describing images for repository: $repo_name ($repo_uri)"
-                      echo "Extracted Registry ID: $registry_id"
-                      echo "Extracted Region: $region"
-                      # Describe images using AWS CLI
-                      aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" --region "$region"
-                  else
-                      echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
-                  fi
+          echo "$ecr_repositories_output" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
+            echo "Repo Name: $repo_name, Repo URI: $repo_uri"
+            if [ -n "$repo_uri" ]; then
+              # Extract registry ID and region from repository URI
+              registry_id=$(echo "$repo_uri" | cut -d'.' -f1)
+              region=$(echo "$repo_uri" | cut -d'.' -f4)
+              if [ -n "$registry_id" ] && [ -n "$region" ]; then
+                echo "Describing images for repository: $repo_name ($repo_uri)"
+                echo "Extracted Registry ID: $registry_id"
+                echo "Extracted Region: $region"
+                # Describe images using AWS CLI
+                images_output=$(aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" --image-ids "$latestTag")
+                # Parse the output and format it as JSON
+                echo "$images_output" | jq -r --arg repo_name "$repo_name" --arg repo_uri "$repo_uri" '.imageDetails[] | { "Registry ID": .registryId, "Repository Name": $repo_name, "Repository URI": $repo_uri, "Image Tag": .imageTags[0] }' >> "$GITHUB_OUTPUT"
               else
-                  echo "Skipping empty repository URI."
+                echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
               fi
-                 echo "::set-output name=images::$images"
+            else
+              echo "Skipping empty repository URI."
+            fi
           done
 
       - name: Process ECR Image Details

@@ -156,7 +156,7 @@ jobs:
         id: list-ecr-repos
         run: |
           echo "Listing ECR repositories..."
-          ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
+          ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "$ecr_repositories" 
         
@@ -164,7 +164,6 @@ jobs:
         run: |
           # Get the output from the List ECR Repos step
           ecr_repositories_output=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
-
           # Check if the JSON output is not null
           if [ -n "$ecr_repositories_output" ]; then
             # Ensure that the ecr_repositories_output is properly formatted JSON

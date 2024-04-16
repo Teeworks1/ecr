@@ -45,7 +45,10 @@
             fi
           done
       - name: Process ECR Image Details
-        if: steps.describe-ecr-images.outputs.images != 'null'
-        run: |
-          ecr_images_output="${{ steps.describe-ecr-images.outputs.images }}"
-          echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'
+  if: steps.describe-ecr-images.outputs.images_output != 'null'
+  run: |
+    ecr_images_output="${{ steps.describe-ecr-images.outputs.images_output }}"
+    echo "ECR Images Output:"
+    echo "$ecr_images_output"
+    echo "Parsed Output:"
+    echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'

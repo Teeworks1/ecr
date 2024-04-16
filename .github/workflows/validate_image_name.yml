@@ -180,8 +180,7 @@ jobs:
             echo "::set-output name=images::$parallel_output"
           else
             echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."
-          fi
-
+          fi    
       - name: Process ECR Image Details
         run: |
           images_output="${{ steps.describe-ecr-images.outputs.images }}"

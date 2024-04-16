@@ -47,7 +47,7 @@ global:
       taskManager:
         resource:
           memory: 8192m
-          cpu: 2
+          cpu: 3
       numberOfTaskSlots: 3
       parallelism: 8
       flinkConfiguration:

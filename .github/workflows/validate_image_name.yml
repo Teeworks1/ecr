@@ -177,6 +177,7 @@ jobs:
             # Parallelize the execution of commands
             parallel_output=$(parallel --jobs 4 ::: "${commands[@]}")
             # Set the output with merged images
+            echo "$parallel_output"
             echo "::set-output name=images::$parallel_output"
           else
             echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."

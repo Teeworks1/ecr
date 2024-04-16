@@ -1,209 +1,208 @@
----
-- name: ECR Image Tag Validation
-  on:
-    pull_request:
-      paths:
-        - '**/values*.yaml'
-    push:
-      paths:
-        - '**/values*.yaml'
+name: ECR Image Tag Validation
+on:
+  pull_request:
+    paths:
+      - '**/values*.yaml'
+  push:
+    paths:
+      - '**/values*.yaml'
 
-  jobs:
-    validate_image_tags:
-      name: Validate Image Tags
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout Pull Request
-          uses: actions/checkout@v4
-          with:
-            ref: ${{ github.event.pull_request.head.sha }}
+jobs:
+  validate_image_tags:
+    name: Validate Image Tags
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Pull Request
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
-        - name: Cache repository state
-          uses: actions/cache@v4
-          with:
-            path: |
-              path/to/cache-directory
-            key: ${{ runner.os }}-build-${{ hashFiles('**/values*.yaml') }}
+      - name: Cache repository state
+        uses: actions/cache@v4
+        with:
+          path: |
+            path/to/cache-directory
+          key: ${{ runner.os }}-build-${{ hashFiles('**/values*.yaml') }}
 
-        - name: Configure AWS Credentials
-          uses: aws-actions/configure-aws-credentials@v4
-          with:
-            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws-region: us-east-1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-        - name: Check for changes
-          id: diff
-          run: |
-            if [ $GITHUB_BASE_REF ]; then
-              # Pull Request
-              git fetch origin $GITHUB_BASE_REF --depth=1
-              export DIFF=$(git diff --name-only origin/$GITHUB_BASE_REF $GITHUB_SHA)
-              echo "Diff between origin/$GITHUB_BASE_REF and $GITHUB_SHA"
-            else
-              # Push
-              git fetch origin ${{ github.event.before }} --depth=1
-              export DIFF=$(git diff --name-only ${{ github.event.before }} $GITHUB_SHA)
-              echo "Diff between ${{ github.event.before }} and $GITHUB_SHA"
-            fi
-            echo "$DIFF"
-            # Escape newlines (replace \n with %0A)
-            echo "::set-output name=diff::$(echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g')"
+      - name: Check for changes
+        id: diff
+        run: |
+          if [ $GITHUB_BASE_REF ]; then
+            # Pull Request
+            git fetch origin $GITHUB_BASE_REF --depth=1
+            export DIFF=$(git diff --name-only origin/$GITHUB_BASE_REF $GITHUB_SHA)
+            echo "Diff between origin/$GITHUB_BASE_REF and $GITHUB_SHA"
+          else
+            # Push
+            git fetch origin ${{ github.event.before }} --depth=1
+            export DIFF=$(git diff --name-only ${{ github.event.before }} $GITHUB_SHA)
+            echo "Diff between ${{ github.event.before }} and $GITHUB_SHA"
+          fi
+          echo "$DIFF"
+          # Escape newlines (replace \n with %0A)
+          echo "::set-output name=diff::$(echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g')"
 
-        - name: Identify Values Files
-          id: identify-values-files
-          run: |
-            echo "Searching for values*.yaml files..."
-            # Get the paths of the changed files
-            changed_files="${{ steps.diff.outputs.diff }}"
-            # Filter the paths to include only values*.yaml files
-            values_files=$(echo "$changed_files" | grep 'values.*\.yaml')
-            if [ -n "$values_files" ]; then
-                echo "Values*.yaml files found:"
-                echo "$values_files"
-                echo "::set-output name=values_files::$values_files"
-            else
-                echo "No values*.yaml files found."
-                exit 1
-            fi
-            overrideTag=""
-            image=""
-            latestTags=()
-            for file in $values_files; do
-                echo "Processing $file..."
-                process_yaml() {
-                    local file="$1"
-                    local in_global=false
-                    local current_image=""
-                    # Function to recursively process YAML structure
-                    parse_yaml() {
-                        local yaml_file="$1"
-                        local prefix="${2:-}"
-                        while IFS= read -r line; do
-                            local key=$(echo "$line" | awk -F':' '{print $1}')
-                            local value=$(echo "$line" | awk -F':' '{print $2}')
-                            # Trim leading and trailing whitespace from key and value
-                            key=$(echo "$key" | awk '{$1=$1;print}')
-                            value=$(echo "$value" | awk '{$1=$1;print}')
-                            if [[ $value =~ \{.*\} ]]; then
-                                # Nested structure
-                                parse_yaml "$yaml_file" "$prefix$key."
-                            elif [[ $key == "image" ]]; then
-                                # Found image string
-                                echo "Image: ${prefix}${value}"
-                            fi
-                        done < "$yaml_file"
-                    }
-                    parse_yaml "$file"
-                }
-                process_yaml "$file"
-                overrideTag_found=false  # Initialize a flag to track if overrideTag is found
-                latestTag_found=false   # Initialize a flag to track if latestTag is found
+      - name: Identify Values Files
+        id: identify-values-files
+        run: |
+          echo "Searching for values*.yaml files..."
+          # Get the paths of the changed files
+          changed_files="${{ steps.diff.outputs.diff }}"
+          # Filter the paths to include only values*.yaml files
+          values_files=$(echo "$changed_files" | grep 'values.*\.yaml')
+          if [ -n "$values_files" ]; then
+              echo "Values*.yaml files found:"
+              echo "$values_files"
+              echo "::set-output name=values_files::$values_files"
+          else
+              echo "No values*.yaml files found."
+              exit 1
+          fi
+          overrideTag=""
+          image=""
+          latestTags=()
+          for file in $values_files; do
+              echo "Processing $file..."
+              process_yaml() {
+                  local file="$1"
+                  local in_global=false
+                  local current_image=""
+                  # Function to recursively process YAML structure
+                  parse_yaml() {
+                      local yaml_file="$1"
+                      local prefix="${2:-}"
+                      while IFS= read -r line; do
+                          local key=$(echo "$line" | awk -F':' '{print $1}')
+                          local value=$(echo "$line" | awk -F':' '{print $2}')
+                          # Trim leading and trailing whitespace from key and value
+                          key=$(echo "$key" | awk '{$1=$1;print}')
+                          value=$(echo "$value" | awk '{$1=$1;print}')
+                          if [[ $value =~ \{.*\} ]]; then
+                              # Nested structure
+                              parse_yaml "$yaml_file" "$prefix$key."
+                          elif [[ $key == "image" ]]; then
+                              # Found image string
+                              echo "Image: ${prefix}${value}"
+                          fi
+                      done < "$yaml_file"
+                  }
+                  parse_yaml "$file"
+              }
+              process_yaml "$file"
+              overrideTag_found=false  # Initialize a flag to track if overrideTag is found
+              latestTag_found=false   # Initialize a flag to track if latestTag is found
 
-                # Additional logic to extract overrideTag and latestTag
-                while IFS= read -r line; do
-                    if [[ $line =~ overrideTag:\ (.+) ]]; then
-                        overrideTag="${BASH_REMATCH[1]}"
-                        echo "Override Tag: $overrideTag"
-                        echo "Image: $current_image"
-                        latestTags=()  # Clearing the latestTags array
-                        overrideTag_found=true  # Set the flag to true when overrideTag is found
-                        # Reset latestTag flag, as overrideTag has priority
-                        latestTag_found=false
-                        # Break the loop as overrideTag has been found
-                        break
-                    elif [[ $line =~ latestTag:\ (.+) ]]; then
-                        latestTags="${BASH_REMATCH[1]}" # Store the latestTag value
-                        echo "Latest Tag: ${BASH_REMATCH[1]}"
-                        latestTag_found=true  # Set the flag to true when latestTag is found
-                    fi
-                done < "$file"
-
-                # Check if overrideTag is found, then echo it
-                if $overrideTag_found; then
-                    echo "::set-output name=overrideTag::$overrideTag"
-                    # Exit the script if overrideTag is found to prevent echoing latestTag
-                    exit 0
-                fi
-
-                # If no overrideTag is found, but latestTag is found, set an output for latestTag
-                if ! $overrideTag_found && $latestTag_found; then
-                    echo "::set-output name=latestTag::$latestTags"
-                fi
-                # Set outputs
-                echo "::set-output name=overrideTag::$overrideTag"
-                echo "::set-output name=image::$current_image"
-                echo "::set-output name=latestTags::$latestTags"
-            done
-
-        - name: Login to Amazon ECR
-          run: |
-            for file in $values_files; do
-                echo "Processing $file..."
-                # Use awk to filter out special characters
-                # Here, we're assuming that the image lines start with 'image: ' and then contain the image URI
-                awk '/image:/ {gsub(/[^[:alnum:]._-]/, "", $2); print $2}' "$file" | while read -r image_uri; do
-                    if [ -n "$image_uri" ]; then
-                        account_id=$(echo "$image_uri" | cut -d'.' -f1)
-                        region=$(echo "$image_uri" | cut -d'.' -f4)
-                        echo "Logging in to Amazon ECR for image: $image_uri"
-                        aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
-                    fi
-                done
-            done
-
-        - name: List ECR Repos
-          id: list-ecr-repos
-          run: |
-            echo "Listing ECR repositories..."
-            ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
-            echo "::set-output name=ecr_repositories::$ecr_repositories"
-            echo "$ecr_repositories"
-
-        - name: Describe ECR Images
-          id: describe-ecr-images
-          run: |
-            # Get the output from the List ECR Repos step
-            ecr_repositories_output=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
-            # Check if the JSON output is not null
-            if [ -n "$ecr_repositories_output" ]; then
-              # Ensure that the ecr_repositories_output is properly formatted JSON
-              echo "$ecr_repositories_output" | jq -e . >/dev/null || { echo "Invalid JSON output from List ECR Repos step"; exit 1; }
-              # Initialize an empty array to store image details
-              images_array=()
-              # Iterate through each repository
-              echo "$ecr_repositories_output" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
-                echo "Repo Name: $repo_name, Repo URI: $repo_uri"
-                if [ -n "$repo_uri" ]; then
-                  # Extract registry ID and region from repository URI
-                  registry_id=$(echo "$repo_uri" | cut -d'.' -f1)
-                  region=$(echo "$repo_uri" | cut -d'.' -f4)
-                  if [ -n "$registry_id" ] && [ -n "$region" ]; then
-                    echo "Describing images for repository: $repo_name ($repo_uri)"
-                    echo "Extracted Registry ID: $registry_id"
-                    echo "Extracted Region: $region"
-                    # Describe images using AWS CLI
-                    images_output=$(aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name")
-                    echo "$images_output"
-                    # Append the images output to the array
-                    images_array+=("$images_output")
-                  else
-                    echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
+              # Additional logic to extract overrideTag and latestTag
+              while IFS= read -r line; do
+                  if [[ $line =~ overrideTag:\ (.+) ]]; then
+                      overrideTag="${BASH_REMATCH[1]}"
+                      echo "Override Tag: $overrideTag"
+                      echo "Image: $current_image"
+                      latestTags=()  # Clearing the latestTags array
+                      overrideTag_found=true  # Set the flag to true when overrideTag is found
+                      # Reset latestTag flag, as overrideTag has priority
+                      latestTag_found=false
+                      # Break the loop as overrideTag has been found
+                      break
+                  elif [[ $line =~ latestTag:\ (.+) ]]; then
+                      latestTags="${BASH_REMATCH[1]}" # Store the latestTag value
+                      echo "Latest Tag: ${BASH_REMATCH[1]}"
+                      latestTag_found=true  # Set the flag to true when latestTag is found
                   fi
-                else
-                  echo "Skipping empty repository URI."
-                fi
-              done
-              # Merge the images array into a single JSON object
-              merged_images_output=$(jq -n 'reduce inputs as $item ({}; . * $item)')
-              echo "::set-output name=images::$merged_images_output"
-            else
-              echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."
-            fi
+              done < "$file"
 
-        - name: Process ECR Image Details
-          run: |
-            images_output="${{ steps.describe-ecr-images.outputs.images }}"
-            echo "$images_output"
-            processed_output=$(echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"')
-            echo "$processed_output"
+              # Check if overrideTag is found, then echo it
+              if $overrideTag_found; then
+                  echo "::set-output name=overrideTag::$overrideTag"
+                  # Exit the script if overrideTag is found to prevent echoing latestTag
+                  exit 0
+              fi
+
+              # If no overrideTag is found, but latestTag is found, set an output for latestTag
+              if ! $overrideTag_found && $latestTag_found; then
+                  echo "::set-output name=latestTag::$latestTags"
+              fi
+              # Set outputs
+              echo "::set-output name=overrideTag::$overrideTag"
+              echo "::set-output name=image::$current_image"
+              echo "::set-output name=latestTags::$latestTags"
+          done
+
+      - name: Login to Amazon ECR
+        run: |
+          for file in $values_files; do
+              echo "Processing $file..."
+              # Use awk to filter out special characters
+              # Here, we're assuming that the image lines start with 'image: ' and then contain the image URI
+              awk '/image:/ {gsub(/[^[:alnum:]._-]/, "", $2); print $2}' "$file" | while read -r image_uri; do
+                  if [ -n "$image_uri" ]; then
+                      account_id=$(echo "$image_uri" | cut -d'.' -f1)
+                      region=$(echo "$image_uri" | cut -d'.' -f4)
+                      echo "Logging in to Amazon ECR for image: $image_uri"
+                      aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
+                  fi
+              done
+          done
+
+      - name: List ECR Repos
+        id: list-ecr-repos
+        run: |
+          echo "Listing ECR repositories..."
+          ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
+          echo "::set-output name=ecr_repositories::$ecr_repositories"
+          echo "$ecr_repositories"
+
+      - name: Describe ECR Images
+        id: describe-ecr-images
+        run: |
+          # Get the output from the List ECR Repos step
+          ecr_repositories_output=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
+          # Check if the JSON output is not null
+          if [ -n "$ecr_repositories_output" ]; then
+            # Ensure that the ecr_repositories_output is properly formatted JSON
+            echo "$ecr_repositories_output" | jq -e . >/dev/null || { echo "Invalid JSON output from List ECR Repos step"; exit 1; }
+            # Initialize an empty array to store image details
+            images_array=()
+            # Iterate through each repository
+            echo "$ecr_repositories_output" | jq -r '.[] | @tsv' | while IFS=$'\t' read -r repo_name repo_uri; do
+              echo "Repo Name: $repo_name, Repo URI: $repo_uri"
+              if [ -n "$repo_uri" ]; then
+                # Extract registry ID and region from repository URI
+                registry_id=$(echo "$repo_uri" | cut -d'.' -f1)
+                region=$(echo "$repo_uri" | cut -d'.' -f4)
+                if [ -n "$registry_id" ] && [ -n "$region" ]; then
+                  echo "Describing images for repository: $repo_name ($repo_uri)"
+                  echo "Extracted Registry ID: $registry_id"
+                  echo "Extracted Region: $region"
+                  # Describe images using AWS CLI
+                  images_output=$(aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name")
+                  echo "$images_output"
+                  # Append the images output to the array
+                  images_array+=("$images_output")
+                else
+                  echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
+                fi
+              else
+                echo "Skipping empty repository URI."
+              fi
+            done
+            # Merge the images array into a single JSON object
+            merged_images_output=$(jq -n 'reduce inputs as $item ({}; . * $item)')
+            echo "::set-output name=images::$merged_images_output"
+          else
+            echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."
+          fi
+
+      - name: Process ECR Image Details
+        run: |
+          images_output="${{ steps.describe-ecr-images.outputs.images }}"
+          echo "$images_output"
+          processed_output=$(echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"')
+          echo "$processed_output"

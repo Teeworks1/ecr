@@ -151,7 +151,6 @@ jobs:
                   fi
               done
           done
-
       - name: List ECR Repos
         id: list-ecr-repos
         run: |
@@ -159,7 +158,6 @@ jobs:
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "$ecr_repositories"
-
       - name: Describe ECR Images
         id: describe-ecr-images
         run: |
@@ -197,5 +195,5 @@ jobs:
       - name: Process ECR Image Details
         if: steps.describe-ecr-images.outputs.images != 'null'
         run: |
-          images="${{ steps.describe-ecr-images.outputs.images }}"
+          images=$(aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name")
           echo "$images" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'

@@ -117,14 +117,12 @@ jobs:
                       latestTag_found=true  # Set the flag to true when latestTag is found
                   fi
               done < "$file"
-
               # Check if overrideTag is found, then echo it
               if $overrideTag_found; then
                   echo "::set-output name=overrideTag::$overrideTag"
                   # Exit the script if overrideTag is found to prevent echoing latestTag
                   exit 0
               fi
-
               # If no overrideTag is found, but latestTag is found, set an output for latestTag
               if ! $overrideTag_found && $latestTag_found; then
                   echo "::set-output name=latestTag::$latestTags"
@@ -134,7 +132,6 @@ jobs:
               echo "::set-output name=image::$current_image"
               echo "::set-output name=latestTags::$latestTags"
           done
-
       - name: Login to Amazon ECR
         run: |
           for file in $values_files; do
@@ -150,7 +147,6 @@ jobs:
                   fi
               done
           done
-
       - name: List ECR Repos
         id: list-ecr-repos
         run: |
@@ -158,7 +154,6 @@ jobs:
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "$ecr_repositories"
-
       - name: Describe ECR Images
         id: describe-ecr-images
         run: |
@@ -199,10 +194,9 @@ jobs:
           else
             echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."
           fi
-
       - name: Process ECR Image Details
         run: |
           images_output="${{ steps.describe-ecr-images.outputs.images }}"
           echo "$images_output"
-          processed_output=$(echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"')
+          processed_output=$(echo "$images_output" | jq -r '.[] | .imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"')
           echo "$processed_output"

@@ -159,7 +159,6 @@ jobs:
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "$ecr_repositories"
-
       - name: Describe ECR Images
         id: describe-ecr-images
         run: |
@@ -195,7 +194,7 @@ jobs:
             echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."
           fi
       - name: Process ECR Image Details
-        if: steps.describe-ecr-images.outputs.images != 'null'
         run: |
          images_output="${{ steps.describe-ecr-images.outputs.images }}"
+         echo "$images_output"
          processed_output=$(echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"')

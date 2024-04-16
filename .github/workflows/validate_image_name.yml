@@ -195,6 +195,7 @@ jobs:
           fi
       - name: Process ECR Image Details
         run: |
-         images_output="${{ steps.describe-ecr-images.outputs.images }}"
-         echo "$images_output"
-         processed_output=$(echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"')
+          images_output="${{ steps.describe-ecr-images.outputs.images }}"
+          echo "$images_output"
+          processed_output=$(echo "$images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"')
+          echo "$processed_output"

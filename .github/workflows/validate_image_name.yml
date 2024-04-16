@@ -49,7 +49,7 @@ jobs:
           echo "$DIFF"
           # Escape newlines (replace \n with %0A)
           echo "::set-output name=diff::$(echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g')"
-  
+
       - name: Identify Values Files
         id: identify-values-files
         run: |
@@ -135,6 +135,7 @@ jobs:
               echo "::set-output name=image::$current_image"
               echo "::set-output name=latestTags::$latestTags"
           done
+
       - name: Login to Amazon ECR
         run: |
           for file in $values_files; do
@@ -150,6 +151,7 @@ jobs:
                   fi
               done
           done
+
       - name: List ECR Repos
         id: list-ecr-repos
         run: |
@@ -157,8 +159,9 @@ jobs:
           ecr_repositories=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json | jq -r 'unique')
           echo "::set-output name=ecr_repositories::$ecr_repositories"
           echo "$ecr_repositories"
+
       - name: Describe ECR Images
-        id:   describe-ecr-images
+        id: describe-ecr-images
         run: |
           # Get the output from the List ECR Repos step
           ecr_repositories_output=$(aws ecr describe-repositories --query 'repositories[*].[repositoryName, repositoryUri]' --output json)
@@ -191,8 +194,8 @@ jobs:
           else
             echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."
           fi
-     - name: Process ECR Image Details
-       if: steps.describe-ecr-images.outputs.images_output != 'null'
-       run: |
-         ecr_images_output="${{ steps.describe-ecr-images.outputs.images_output }}"
-         echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'
+      - name: Process ECR Image Details
+        if: steps.describe-ecr-images.outputs.images_output != 'null'
+        run: |
+          ecr_images_output="${{ steps.describe-ecr-images.outputs.images_output }}"
+          echo "$ecr_images_output" | jq -r '.imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"'

@@ -1,3 +1,4 @@
+---
 - name: ECR Image Tag Validation
   on:
     pull_request:
@@ -199,6 +200,7 @@
             else
               echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."
             fi
+
         - name: Process ECR Image Details
           run: |
             images_output="${{ steps.describe-ecr-images.outputs.images }}"

@@ -48,7 +48,6 @@ jobs:
           echo "$DIFF"
           # Escape newlines (replace \n with %0A)
           echo "::set-output name=diff::$(echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g')"
-
       - name: Identify Values Files
         id: identify-values-files
         run: |
@@ -98,7 +97,6 @@ jobs:
               process_yaml "$file"
               overrideTag_found=false  # Initialize a flag to track if overrideTag is found
               latestTag_found=false   # Initialize a flag to track if latestTag is found
-
               # Additional logic to extract overrideTag and latestTag
               while IFS= read -r line; do
                   if [[ $line =~ overrideTag:\ (.+) ]]; then
@@ -131,21 +129,6 @@ jobs:
               echo "::set-output name=overrideTag::$overrideTag"
               echo "::set-output name=image::$current_image"
               echo "::set-output name=latestTags::$latestTags"
-          done
-      - name: Login to Amazon ECR
-        run: |
-          for file in $values_files; do
-              echo "Processing $file..."
-              # Use awk to filter out special characters
-              # Here, we're assuming that the image lines start with 'image: ' and then contain the image URI
-              awk '/image:/ {gsub(/[^[:alnum:]._-]/, "", $2); print $2}' "$file" | while read -r image_uri; do
-                  if [ -n "$image_uri" ]; then
-                      account_id=$(echo "$image_uri" | cut -d'.' -f1)
-                      region=$(echo "$image_uri" | cut -d'.' -f4)
-                      echo "Logging in to Amazon ECR for image: $image_uri"
-                      aws ecr get-login-password --region "$region" | docker login --username AWS --password-stdin "$account_id.dkr.ecr.$region.amazonaws.com"
-                  fi
-              done
           done
       - name: List ECR Repos
         id: list-ecr-repos

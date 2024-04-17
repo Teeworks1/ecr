@@ -133,6 +133,7 @@ jobs:
               echo "::set-output name=latestTags::$latestTags"
           done
 
+
       - name: List ECR Repos
         id: list-ecr-repos
         run: |

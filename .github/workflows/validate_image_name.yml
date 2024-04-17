@@ -1,4 +1,4 @@
-name: ECR Image Tag Validation
+name: ECR Image Description
 
 on:
   pull_request:
@@ -9,8 +9,8 @@ on:
       - '**/values*.yaml'
 
 jobs:
-  validate_image_tags:
-    name: Validate Image Tags
+  describe_ecr_images:
+    name: Describe ECR Images
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Pull Request
@@ -49,7 +49,7 @@ jobs:
           echo "$DIFF"
           # Escape newlines (replace \n with %0A)
           echo "::set-output name=diff::$(echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g')"
-      
+
       - name: Identify Values Files
         id: identify-values-files
         run: |
@@ -150,7 +150,6 @@ jobs:
           if [ -n "$ecr_repositories_output" ]; then
             # Ensure that the ecr_repositories_output is properly formatted JSON
             echo "$ecr_repositories_output" | jq -e . >/dev/null || { echo "Invalid JSON output from List ECR Repos step"; exit 1; }
-
             # Initialize an empty array to store repository details
             declare -a repositories
             
@@ -160,7 +159,8 @@ jobs:
                 registry_id=$(echo "$repo_uri" | cut -d'.' -f1)
                 region=$(echo "$repo_uri" | cut -d'.' -f4)
                 if [ -n "$registry_id" ] && [ -n "$region" ]; then
-                  repositories+=("$repo_name:$repo_uri:$registry_id:$region")
+                  # Run 'aws ecr describe-images' command in the background for each repository
+                  aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" &
                 else
                   echo "Unable to extract Registry ID and Region for repository: $repo_name ($repo_uri)"
                 fi
@@ -169,17 +169,17 @@ jobs:
               fi
             done < <(echo "$ecr_repositories_output" | jq -r '.[] | @tsv')
             
-            # Parallelize the execution of 'aws ecr describe-images' command for each repository
-            parallel_output=$(parallel --jobs 4 'aws ecr describe-images --registry-id {3} --repository-name {1}' ::: "${repositories[@]}")
+            # Wait for all background processes to finish
+            wait
             
-            # Set the output with merged images
-            echo "::set-output name=images::$parallel_output"
+            echo "All 'aws ecr describe-images' commands completed."
           else
             echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."
-          fi
+          fi 
+
       - name: Process ECR Image Details
         run: |
-          images_output="${{ steps.describe-ecr-images.outputs.images }}"
-          echo "$images_output"
+          # Combine outputs of all 'aws ecr describe-images' commands
+          images_output=$(cat /dev/stdin)
           processed_output=$(echo "$images_output" | jq -r '.[] | .imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"')
           echo "$processed_output"

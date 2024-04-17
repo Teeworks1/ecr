@@ -132,8 +132,6 @@ jobs:
               echo "::set-output name=image::$current_image"
               echo "::set-output name=latestTags::$latestTags"
           done
-
-
       - name: List ECR Repos
         id: list-ecr-repos
         run: |
@@ -177,13 +175,17 @@ jobs:
             wait
             
             echo "All 'aws ecr describe-images' commands completed."
+            echo "::set-output name=describe_images::${images[@]}"
           else
             echo "No output received from List ECR Repos step. Skipping Describe ECR Images step."
           fi 
 
       - name: Process ECR Image Details
         run: |
-          # Combine outputs of all 'aws ecr describe-images' commands
-          images_output=$(cat /dev/stdin)
+          echo "Output from Step 1: ${{ steps.identify-values-files.outputs.images }}"
+          echo "Output from Step 2: ${{ steps.describe-ecr-images.outputs.describe_images }}
           processed_output=$(echo "$images_output" | jq -r '.[] | .imageDetails[] | "Registry ID: \(.registryId), Repository Name: \(.repositoryName), Image Tag: \(.imageTags[0])"')
           echo "$processed_output"
+run: |
+          echo "Output from Step 1: ${{ steps.step-one.outputs.output-one }}"
+          echo "Output from Step 2: ${{ steps.step-two.outputs.output-two }}"

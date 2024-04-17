@@ -159,6 +159,9 @@ jobs:
                 registry_id=$(echo "$repo_uri" | cut -d'.' -f1)
                 region=$(echo "$repo_uri" | cut -d'.' -f4)
                 if [ -n "$registry_id" ] && [ -n "$region" ]; then
+                  echo "Describing images for repository: $repo_name ($repo_uri)"
+                  echo "Extracted Registry ID: $registry_id"
+                  echo "Extracted Region: $region"
                   # Run 'aws ecr describe-images' command in the background for each repository
                   aws ecr describe-images --registry-id "$registry_id" --repository-name "$repo_name" &
                 else

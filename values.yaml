@@ -1,6 +1,11 @@
 env:
-  replicas: 4
+  latestTag: 3594847484930344738
+  replicas: 6
 
 spec:
   containers:
     image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction:latest
+spec:
+  containers:
+    image: 891376975226.dkr.ecr.us-east-1.amazonaws.com/githubaction:null
+    

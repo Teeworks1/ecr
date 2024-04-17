@@ -69,7 +69,7 @@ ws-service:
       ingress: "private"
       keda:
         minReplicaCount: 2
-        maxReplicaCount: 4
+        maxReplicaCount: 6
         triggers:
           - type: "cpu"
             value: "65"
